@@ -1,11 +1,13 @@
 # CODEBUDDY.md This file provides guidance to CodeBuddy when working with code in this repository.
 
-本工作区用于编写「货灵 WMS」代码，业务源码统一放在 `code/`（目录已建，尚无内容），`humandesign/` 与 `openspec/` 只放设计与规格文档。目前是设计先行阶段：构建配置与测试尚未落盘，构建与单测入口随工程落盘后按 `code/` 下的实际构建文件补充。`humandesign/调研/**/_sources/` 是被忽略的第三方源码副本，不要遍历，也不要当作依据。
+本工作区用于编写「货灵 WMS」代码，业务源码统一放在 `code/`，`humandesign/` 与 `openspec/` 只放设计与规格文档。后端骨架已落盘（父 POM、四个可启动单元、架构断言），尚无业务代码。`humandesign/调研/**/_sources/` 是被忽略的第三方源码副本，不要遍历，也不要当作依据。
 
 ## 常用命令
 
 | 命令 | 说明 |
 |---|---|
+| `JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home mvn -f code/backend/pom.xml clean verify` | 后端构建与架构断言；本机默认 JDK 27，父 POM 有 Java 21 门禁，必须显式指定，否则构建直接失败。 |
+| `bash code/backend/scripts/check-warehouse-type.sh` | AR-10 扫描：仓型比较只允许在 strategy 包。 |
 | `python3 .codebuddy/tools/check-design.py` | 设计文档校验；每次写完与三章收口前必跑，错误数须为 0。 |
 | `python3 .codebuddy/tools/check-design.py <变更名>` | 只校验指定变更，相当于单独跑一次检查。 |
 | `python3 .codebuddy/tools/check-design.py --init <变更名>` | 生成三章骨架；`--list-checks` 列出检查项与格式契约。 |

@@ -6,25 +6,25 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
-import com.tngtech.archunit.junit.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
-import com.tngtech.archunit.lang.conditions.ArchConditions;
 
 import java.util.Set;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noMethods;
 
 /**
- * 十四条红线的构建期落点：03 的依赖规则与 14 的 AR-01 至 AR-09。
- * AR-10（仓型比较只在 strategy 包）无法用包依赖表达，由 CI 脚本扫描，见 scripts/check-warehouse-type.sh。
+ * 分层、聚合根、值对象与事件发布的构建期断言：AR-01、AR-02、AR-04 至 AR-08。
+ * AR-03 见 UnitIsolationRulesTest，AR-09 见 ModuleBoundaryRulesTest，
+ * AR-10 无法用包依赖表达，由 scripts/check-warehouse-type.sh 扫描。
  */
 @AnalyzeClasses(packages = "com.huoling.wms", importOptions = ImportOption.DoNotIncludeTests.class)
 class LayeringRulesTest {
@@ -56,10 +56,10 @@ class LayeringRulesTest {
     /** AR-04 聚合根不暴露 setter。 */
     @ArchTest
     static final ArchRule 聚合根不暴露setter =
-        methods()
+        noMethods()
             .that().arePublic()
             .and().areDeclaredInClassesThat().areAnnotatedWith(AggregateRoot.class)
-            .should().notHaveNameMatching("set[A-Z].*");
+            .should().haveNameMatching("set[A-Z].*");
 
     /** AR-05 聚合根必须有行为，不能只是数据载体。 */
     @ArchTest
@@ -92,73 +92,6 @@ class LayeringRulesTest {
             .that().resideOutsideOfPackage("..domain..")
             .should().accessClassesThat().haveSimpleName("DomainEventPublisher");
 
-    /** AR-03 四个可启动单元互不依赖，逐单元断言。 */
-    @ArchTest
-    static final class 启动单元互不依赖 {
-
-        @ArchTest
-        static final ArchRule 运营端不依赖其他单元 =
-            noClasses().that().resideInAPackage("..wms.hub..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..wms.site..", "..wms.open..", "..wms.billing..");
-
-        @ArchTest
-        static final ArchRule 单仓端不依赖其他单元 =
-            noClasses().that().resideInAPackage("..wms.site..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..wms.hub..", "..wms.open..", "..wms.billing..");
-
-        @ArchTest
-        static final ArchRule 接入层不依赖其他单元 =
-            noClasses().that().resideInAPackage("..wms.open..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..wms.hub..", "..wms.site..", "..wms.billing..");
-
-        @ArchTest
-        static final ArchRule 计费域不依赖其他单元 =
-            noClasses().that().resideInAPackage("..wms.billing..")
-                .should().dependOnClassesThat()
-                .resideInAnyPackage("..wms.hub..", "..wms.site..", "..wms.open..");
-    }
-
-    /**
-     * AR-09 跨模块只传 DTO：模块 domain 包对其他模块不可见。
-     * 十一个业务模块的包名按 11 落定，M01 补 masterdata，其余沿用 14 的示例。
-     */
-    @ArchTest
-    static final class 跨模块不暴露领域实体 {
-
-        @ArchTest
-        static final ArchRule 主数据模块不暴露领域实体 = 模块外不得引用("masterdata");
-        @ArchTest
-        static final ArchRule 库位模块不暴露领域实体 = 模块外不得引用("location");
-        @ArchTest
-        static final ArchRule 库存模块不暴露领域实体 = 模块外不得引用("stock");
-        @ArchTest
-        static final ArchRule 任务模块不暴露领域实体 = 模块外不得引用("task");
-        @ArchTest
-        static final ArchRule 单据模块不暴露领域实体 = 模块外不得引用("order");
-        @ArchTest
-        static final ArchRule 策略模块不暴露领域实体 = 模块外不得引用("strategy");
-        @ArchTest
-        static final ArchRule 加工模块不暴露领域实体 = 模块外不得引用("processing");
-        @ArchTest
-        static final ArchRule 作业事实模块不暴露领域实体 = 模块外不得引用("billingfact");
-        @ArchTest
-        static final ArchRule 设备模块不暴露领域实体 = 模块外不得引用("device");
-        @ArchTest
-        static final ArchRule 仓网模块不暴露领域实体 = 模块外不得引用("warehouse");
-        @ArchTest
-        static final ArchRule 班组模块不暴露领域实体 = 模块外不得引用("team");
-
-        private static ArchRule 模块外不得引用(String module) {
-            return noClasses()
-                .that().resideOutsideOfPackages("..wms." + module + "..")
-                .should().dependOnClassesThat()
-                .resideInAPackage("..wms." + module + ".domain..");
-        }
-    }
-
     private static ArchCondition<JavaClass> 至少有一个业务方法() {
         return new ArchCondition<>("除访问器外至少有一个 public 业务方法") {
             @Override
@@ -173,7 +106,8 @@ class LayeringRulesTest {
             }
 
             private boolean isAccessor(JavaMethod m) {
-                return m.getName().startsWith("get") || m.getName().startsWith("is");
+                String name = m.getName();
+                return name.startsWith("get") || name.startsWith("is") || name.startsWith("set");
             }
 
             private boolean isObjectMethod(JavaMethod m) {
