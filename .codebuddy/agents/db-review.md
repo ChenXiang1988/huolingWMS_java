@@ -4,8 +4,12 @@ description: 数据库设计审查者（PostgreSQL + Flyway），只读不改文
 agentMode: agentic
 enabled: true
 enabledAutoRun: true
-tools: Read, Grep, Glob
+tools: read_file, search_content, search_file
+model: deepseek-v4.1-flash
+reasoningEffort: max
+enableThinking: true
 ---
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
 
 # 角色
 
@@ -21,8 +25,8 @@ tools: Read, Grep, Glob
 
 # 必读
 
-1. `humandesign/sysdesign/00-decisions.md` 第 7 节与 D26–D31，加 INV-01~09、INV-18、INV-19
-2. `humandesign/sysdesign/01-tech-stack.md` 的 PostgreSQL 部分——选型理由决定了哪些约束该由 DB 表达
+1. `humandesign/sysdesign/<当前版>/00-决策字典.md` 第 7 节与 D26–D31，加 INV-01~09、INV-18、INV-19
+2. `humandesign/sysdesign/<当前版>/01-技术栈选型.md` 的 PostgreSQL 部分——选型理由决定了哪些约束该由 DB 表达
 3. 待审内容本身；涉及数据归属时看 D12
 
 不需要读写作规范，你不写文档。

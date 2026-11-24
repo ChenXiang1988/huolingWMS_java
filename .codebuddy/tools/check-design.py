@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 """货灵 WMS 设计文档校验器。
 
-对 openspec/changes/<change>/design.md 做机器可判定的检查，覆盖五类：
+对 openspec/changes/<change>/design.md 做机器可判定的检查，覆盖六类：
   1. 结构   三章是否齐全、顺序是否正确、占位是否残留
   2. 编号   API / INV / D 编号是否存在、是否有孤儿引用
   3. 禁用项 红线词、越界内容（契约写表名、前端写 SQL 等）
   4. 特征词 把 00 的硬决策翻译成必须搜到的字符串
   5. 跨章对账 契约 ↔ 后端 ↔ 前端 ↔ 任务 的引用闭合
+  6. 鲁棒性 契约章是否成节、写接口幂等要素、错误码表与验收
 
 用法：
   python3 .codebuddy/tools/check-design.py
@@ -32,7 +33,26 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE_DECISIONS = ROOT / "humandesign" / "sysdesign" / "00-decisions.md"
+SYSDESIGN = ROOT / "humandesign" / "sysdesign"
+VERSION_POINTER = SYSDESIGN / "current-version.txt"
+
+
+def _resolve_current_version() -> str:
+    """当前版本只由指针文件决定。
+
+    这里刻意不设默认值：脚本一旦写死某个版本号，升级版本时就会出现
+    「指针改了、脚本还在按旧版校验」的静默错误。指针缺失或格式不对时
+    返回空串，由 main() 以退出码 2 报「未定位对象」。
+    """
+    if not VERSION_POINTER.exists():
+        return ""
+    value = VERSION_POINTER.read_text(encoding="utf-8").strip()
+    return value if re.fullmatch(r"v\d+", value) else ""
+
+
+CURRENT_VERSION = _resolve_current_version()
+ACTIVE_DIR = SYSDESIGN / (CURRENT_VERSION or "__version-pointer-unresolved__")
+BASELINE_DECISIONS = ACTIVE_DIR / "00-决策字典.md"
 CHANGES_DIR = ROOT / "openspec" / "changes"
 
 # key, 显示名, 标题识别关键词
@@ -398,8 +418,8 @@ def check_contract_common(ctx: Ctx, r: Report) -> None:
     if absent:
         r.warn("API-07", "契约通用约定未见：%s（若分散在各接口条目中可忽略）" % "、".join(absent))
 
-    if not all(k in text for k in ("code", "message", "traceId")):
-        r.error("API-08", "错误响应结构必须同时包含 code / message / traceId")
+    if not all(k in text for k in ("code", "message", "traceId", "retryable")):
+        r.error("API-08", "错误响应结构必须同时包含 code / message / traceId / retryable")
 
 
 def check_contract_no_storage(ctx: Ctx, r: Report) -> None:
@@ -412,6 +432,74 @@ def check_contract_no_storage(ctx: Ctx, r: Report) -> None:
         for token in BAD:
             if token in line and not is_exempt(line):
                 r.error("API-09", "契约章不应出现存储细节「%s」" % token.strip(), idx + 1)
+
+
+def check_contract_robustness(ctx: Ctx, r: Report) -> None:
+    if "api" not in ctx.sections:
+        return
+    text = section_text(ctx, "api")
+    REQUIRED = [
+        ("鲁棒性约定", ("鲁棒性约定", "鲁棒性")),
+        ("幂等约定", ("幂等约定",)),
+        ("契约验收", ("契约验收", "验收标准")),
+    ]
+    absent = [name for name, kws in REQUIRED if not any(k in text for k in kws)]
+    if absent:
+        r.error("API-11", "契约章缺少：%s；鲁棒性与幂等必须成节，不能只在接口条目里零散出现"
+                % "、".join(absent))
+
+
+def check_write_api_idempotency_detail(ctx: Ctx, r: Report) -> None:
+    for e in ctx.api_entries:
+        if e["table_mode"]:
+            continue
+        body = "\n".join(e["body"])
+        is_write = any(m in body for m in ("POST ", "PUT ", "PATCH ", "DELETE "))
+        if not is_write:
+            continue
+        REQUIRED = [
+            ("幂等键载体", ("幂等键", "Idempotency-Key")),
+            ("幂等作用域", ("作用域", "货主 + 接口", "货主+接口")),
+            ("幂等窗口", ("窗口", "有效期")),
+            ("重复与处理中", ("重复", "处理中")),
+            ("同键异体", ("同键异体", "指纹", "冲突")),
+        ]
+        absent = [name for name, kws in REQUIRED if not any(k in body for k in kws)]
+        if absent:
+            r.error("API-12", "写接口 %s 的幂等条目缺少：%s（D21）"
+                    % (e["id"], "、".join(absent)), e["line"])
+
+
+def check_api_entry_robustness(ctx: Ctx, r: Report) -> None:
+    for e in ctx.api_entries:
+        if e["table_mode"]:
+            continue
+        body = "\n".join(e["body"])
+        REQUIRED = [
+            ("超时预算", ("超时", "预算")),
+            ("限流", ("限流",)),
+            ("降级", ("降级", "dataTimestamp")),
+            ("并发冲突", ("并发", "版本", "冲突")),
+            ("验收用例", ("验收", "用例")),
+        ]
+        absent = [name for name, kws in REQUIRED if not any(k in body for k in kws)]
+        if absent:
+            r.error("API-13", "接口 %s 缺少：%s" % (e["id"], "、".join(absent)), e["line"])
+
+
+def check_error_code_table(ctx: Ctx, r: Report) -> None:
+    if "api" not in ctx.sections:
+        return
+    tables = find_table(ctx, "api", ("错误码", "HTTP", "重试", "触发条件", "出现位置"))
+    if not tables:
+        r.error("API-14", "错误码表必须同时含「错误码」「HTTP」「重试」「触发条件」「出现位置」列")
+        return
+    if not any(t["rows"] for t in tables):
+        r.error("API-14", "错误码表没有数据行")
+        return
+    hdr = " ".join(tables[0]["header"])
+    if "调用方" not in hdr and "处置" not in hdr:
+        r.warn("API-14", "错误码表建议补「调用方处置」列")
 
 
 # ---------------------------------------------------------------- 后端检查
@@ -673,6 +761,34 @@ def check_decision_reference(ctx: Ctx, r: Report) -> None:
                 r.error("REF-01", "引用了 00 中不存在的决策编号 %s" % full, idx + 1)
 
 
+def check_version_policy(ctx: Ctx, r: Report) -> None:
+    """当前版本由 current-version.txt 决定；产物不得引用非当前版本路径。
+
+    版本号不写在正则里：任何 v<序号> 目录，只要不等于指针值就算归档版，
+    这样升到 v3、v4 时检查项无需修改。
+    """
+    versioned = re.compile(r"humandesign/sysdesign/(v\d+)/")
+    bare = re.compile(r"humandesign/sysdesign/(?:\d{2}[^/\s]*\.md|index\.md|log\.md)")
+    for idx, line in enumerate(ctx.lines):
+        stale = sorted({v for v in versioned.findall(line) if v != CURRENT_VERSION})
+        if not stale and not bare.search(line):
+            continue
+        target = "、".join(stale) if stale else "根目录旧文档路径"
+        if "历史版本" in line or "仅供溯源" in line:
+            r.warn(
+                "VER-02",
+                "第 %d 行引用了归档版本 %s 但已标注溯源用途，请人工确认" % (idx + 1, target),
+                idx + 1,
+            )
+        else:
+            r.error(
+                "VER-01",
+                "第 %d 行引用了非当前版本路径（%s）；当前有效版本为 %s，请改用 humandesign/sysdesign/%s/..."
+                % (idx + 1, target, CURRENT_VERSION, CURRENT_VERSION),
+                idx + 1,
+            )
+
+
 # ---------------------------------------------------------------- 规范文档检查
 # 12 号界面规范与 13 号移动作业端规范不在 design.md 三章内，用另一套检查：
 # 四段骨架、编号定义唯一、引用闭合、必备条目、色值约束、特征词、禁用词。
@@ -680,7 +796,7 @@ def check_decision_reference(ctx: Ctx, r: Report) -> None:
 NORM_SPECS = [
     {
         "code": "UI",
-        "path": "humandesign/sysdesign/12-ui-design-system.md",
+        "path": "humandesign/sysdesign/%s/12-界面与交互设计规范.md" % CURRENT_VERSION,
         "label": "界面与交互设计规范",
         "optional": False,
         "id_re": r"\bUI-([A-Z])(\d{2})\b",
@@ -699,14 +815,19 @@ NORM_SPECS = [
         ],
         "hex_only_in": r"UI-T\d{2}",
         "forbidden": [],
+        # 页面骨架 UI-P01~P05、P09~P11 按职责写在 12a，编号定义要跨这两份合并，
+        # 否则 12 号一引用就误报「未定义编号」。
+        "companions": ["humandesign/sysdesign/%s/12a-网页页面与分端规格.md" % CURRENT_VERSION],
     },
     {
-        "code": "PDA",
-        "path": "humandesign/sysdesign/13-pda-interaction-design.md",
+        # 移动作业端规范的登记名是 12b-移动作业端规格.md，编号沿用 UI 体系里的 UI-M；
+        # 早期的 13-pda-interaction-design.md 与 PDA-* 前缀是废弃口径。
+        "code": "UI",
+        "path": "humandesign/sysdesign/%s/12b-移动作业端规格.md" % CURRENT_VERSION,
         "label": "移动作业端交互设计规范",
         "optional": True,
-        "id_re": r"\bPDA-([A-Z])(\d{2})\b",
-        "required_prefixes": ["PDA-W", "PDA-C", "PDA-I", "PDA-F", "PDA-E", "PDA-A"],
+        "id_re": r"\bUI-(M)(\d{2})\b",
+        "required_prefixes": ["UI-M"],
         "required_ids": [],
         "required_phrases": [
             ("扫码", "扫码是主路径（D25）"),
@@ -772,6 +893,17 @@ def check_one_norm(spec: dict, r: Report) -> None:
                     % (full, "、".join(str(x) for x in where)), line=where[0], source=rel)
 
     defined = set(defs)
+    # 编号可以定义在同组的附属文件里（页面骨架在 12a、共享底座在 12）。
+    # 这里只合并定义，不在附属文件里重跑引用检查，避免同一问题两头报。
+    for comp in spec.get("companions", []):
+        comp_path = ROOT / comp
+        if not comp_path.exists():
+            continue
+        for comp_line in comp_path.read_text(encoding="utf-8").splitlines():
+            for full in _norm_ids(spec, comp_line):
+                if _is_definition(comp_line, full):
+                    defined.add(full)
+
     for idx, line in enumerate(lines):
         for full in _norm_ids(spec, line):
             if full not in defined:
@@ -819,43 +951,49 @@ def check_one_norm(spec: dict, r: Report) -> None:
             if m and not is_exempt(line):
                 r.error("NORM-09", "%s：出现「%s」" % (why, m.group(0)), line=idx + 1, source=rel)
 
-    NORM_INDEX_CACHE[spec["code"]] = defined
+    # 12 号与 12b 号同属 UI 编号体系，按 code 累加而不是覆盖，
+    # 否则后跑的那份会把前一份的编号集冲掉，变更文档的引用闭合检查跟着失真。
+    NORM_INDEX_CACHE[spec["code"]] = NORM_INDEX_CACHE.get(spec["code"], set()) | defined
 
 
 def check_index_registration(r: Report) -> None:
-    idx_path = ROOT / "humandesign" / "sysdesign" / "index.md"
+    """规范文件已落盘，就必须在当前版 index.md 的文档清单里有一行。
+
+    按文件名判定登记，不按「| 12 |」这种编号列：index.md 的清单表是
+    「文档 / 状态 / 修订依据」三列，文件名本身就是登记键。
+    """
+    idx_path = ACTIVE_DIR / "index.md"
     if not idx_path.exists():
         return
     text = idx_path.read_text(encoding="utf-8")
-    rel = "humandesign/sysdesign/index.md"
-    for num, filename in (("12", "12-ui-design-system.md"), ("13", "13-pda-interaction-design.md")):
-        if not (ROOT / "humandesign" / "sysdesign" / filename).exists():
+    rel = "humandesign/sysdesign/%s/index.md" % CURRENT_VERSION
+    for filename in ("12-界面与交互设计规范.md", "12a-网页页面与分端规格.md", "12b-移动作业端规格.md"):
+        if not (ACTIVE_DIR / filename).exists():
             continue
-        if not re.search(r"\|\s*" + num + r"\s*\|", text):
-            r.error("NORM-10", "%s 已存在，但 index.md 文档清单未登记编号 %s" % (filename, num), source=rel)
+        row = re.search(r"^\|\s*\[?`?" + re.escape(filename) + r"`?\]?", text, re.M)
+        if not row:
+            r.error("NORM-10", "%s 已存在，但 index.md 文档清单未登记" % filename, source=rel)
 
 
 def check_pda_change_docs(r: Report) -> None:
+    """变更目录的 pda.md 只能引用 12、12a、12b 已定义的编号。"""
     changes = ROOT / "openspec" / "changes"
     if not changes.exists():
         return
-    ui_ids = NORM_INDEX_CACHE.get("UI", set())
-    pda_ids = NORM_INDEX_CACHE.get("PDA", set())
+    defined = NORM_INDEX_CACHE.get("UI", set())
     ui_spec = {"code": "UI", "id_re": r"\bUI-([A-Z])(\d{2})\b"}
-    pda_spec = {"code": "PDA", "id_re": r"\bPDA-([A-Z])(\d{2})\b"}
 
     for f in sorted(changes.glob("*/pda.md")):
         rel = str(f.relative_to(ROOT))
         text = f.read_text(encoding="utf-8")
-        if ui_ids:
-            for full in _norm_ids(ui_spec, text):
-                if full not in ui_ids:
-                    r.error("NORM-11", "变更差异引用了 12 号规范中不存在的 %s" % full, source=rel)
-        for full in _norm_ids(pda_spec, text):
-            if not pda_ids:
-                r.error("NORM-12", "变更差异引用了 %s，但 13 号常驻规范尚未建立" % full, source=rel)
-            elif full not in pda_ids:
-                r.error("NORM-12", "变更差异引用了 13 号规范中不存在的 %s" % full, source=rel)
+        for full in _norm_ids(ui_spec, text):
+            if full in defined:
+                continue
+            # UI-M* 归移动作业端规范，其余归 12 / 12a，报错时点名该查哪一份。
+            if full.startswith("UI-M"):
+                r.error("NORM-12", "变更差异引用了移动作业端规范 12b 中不存在的 %s" % full, source=rel)
+            else:
+                r.error("NORM-11", "变更差异引用了界面规范 12/12a 中不存在的 %s" % full, source=rel)
 
 
 def check_norms(r: Report) -> None:
@@ -872,10 +1010,14 @@ CHECKS = [
     ("STRUCT-08", "章节标题层级一致", check_structure_extra, None),
     ("API-01..03", "接口编号格式、唯一、连续", check_api_ids, ("api",)),
     ("API-04", "全文接口编号引用闭合", check_api_reference_closure, ("api",)),
-    ("API-05", "接口条目八项要素齐全", check_api_entry_completeness, ("api",)),
+    ("API-05", "接口条目基础要素齐全", check_api_entry_completeness, ("api",)),
     ("API-06", "写接口必须有幂等（D21）", check_write_api_idempotent, ("api",)),
     ("API-07..08", "契约通用约定与错误响应结构", check_contract_common, ("api",)),
     ("API-09", "契约章不得出现存储细节", check_contract_no_storage, ("api",)),
+    ("API-11", "契约章含鲁棒性、幂等约定、契约验收三节", check_contract_robustness, ("api",)),
+    ("API-12", "写接口幂等条目含键、作用域、窗口、重复/处理中、同键异体", check_write_api_idempotency_detail, ("api",)),
+    ("API-13", "接口条目含超时、限流、降级、并发、验收用例", check_api_entry_robustness, ("api",)),
+    ("API-14", "错误码表含错误码、HTTP、重试、触发条件、出现位置", check_error_code_table, ("api",)),
     ("BE-01 / REF-01", "INV 与 D 编号必须存在于 00", check_backend_invariants, ("backend",)),
     ("BE-02 / GLOBAL-01 / BE-10 / DB-01", "红线禁用词", check_forbidden_terms, None),
     ("BE-03", "location_id NOT NULL（INV-01）", check_location_not_null, ("backend",)),
@@ -892,6 +1034,7 @@ CHECKS = [
     ("X-03", "契约接口在后端有落点", check_backend_landing, ("api", "backend")),
     ("X-04", "契约不变量在后端有手段", check_invariant_flow, ("api", "backend")),
     ("REF-01", "决策编号存在性", check_decision_reference, None),
+    ("VER-01 / VER-02", "非当前版本引用门禁", check_version_policy, None),
 ]
 
 
@@ -957,7 +1100,7 @@ def print_list_checks() -> None:
         print("  %-32s %-34s %s" % (code, desc, dep))
     print("\n[规范文档]")
     for code, desc in (
-        ("NORM-01", "规范文件存在性（13 号缺省为可跳过）"),
+        ("NORM-01", "规范文件存在性（optional 缺失为可跳过）"),
         ("NORM-02", "四段骨架：结论 / 问题 / 设计 / 约束与验证"),
         ("NORM-03", "编号重复定义"),
         ("NORM-04", "编号引用闭合"),
@@ -966,9 +1109,9 @@ def print_list_checks() -> None:
         ("NORM-07", "十六进制色值只能出现在令牌条目内"),
         ("NORM-08", "硬约束特征词（受理号、错误码、数据时间、留痕、48 等）"),
         ("NORM-09", "禁用词（离线能力、本地缓存、稍后同步）"),
-        ("NORM-10", "12/13 号已存在必须登记进 index.md"),
-        ("NORM-11", "变更差异 pda.md 引用 UI 编号闭合"),
-        ("NORM-12", "变更差异 pda.md 引用 PDA 编号闭合"),
+        ("NORM-10", "12/12a/12b 已存在必须登记进 index.md"),
+        ("NORM-11", "变更差异 pda.md 引用 12/12a 编号闭合"),
+        ("NORM-12", "变更差异 pda.md 引用 12b 编号闭合"),
     ):
         print("  %-32s %s" % (code, desc))
     print("\n格式依赖：")
@@ -977,7 +1120,8 @@ def print_list_checks() -> None:
     print("  3. 表清单表头含「表名」，并有一列含「脚本」")
     print("  4. 页面映射表头含「页面」与「接口编号」")
     print("  5. 规范条目定义行以编号开头：表格首列、**加粗**或标题")
-    print("  6. 规范条目编号两位数字：UI-I01、PDA-W01")
+    print("  6. 规范条目编号两位数字：UI-I01、UI-M01")
+    print("  7. 契约章含「鲁棒性约定」「幂等约定」「错误码表」与章末「契约验收」")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -997,6 +1141,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.list_checks:
         print_list_checks()
         return 0
+    if not CURRENT_VERSION:
+        msg = ("未定位到当前版本：%s 不存在或内容不是 v<序号> 形式。"
+               "该指针是当前版本唯一事实源，请先修复它，脚本不设默认版本。" % VERSION_POINTER)
+        if args.json:
+            print(json.dumps({"status": "NEED_TARGET", "message": msg}, ensure_ascii=False))
+        else:
+            print(msg, file=sys.stderr)
+        return 2
     if args.init:
         return do_init(args.init)
 

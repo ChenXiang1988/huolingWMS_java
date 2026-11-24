@@ -1,6 +1,8 @@
 # 设计文档写作规范
 
-适用于 `humandesign/sysdesign/` 下的全部设计文档。
+适用于 `humandesign/sysdesign/<当前版>/` 下的全部设计文档，`<当前版>` 按 `current-version.txt` 的指针值展开；指针未指向的版本目录一律冻结只读，不适用本规范，也不得作为写作依据。
+
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本规范不写具体版本号，全库检索须显式排除指针未指向的版本目录。完整规则见 `.codebuddy/rules/version-policy.md`；本规范与版本门禁冲突时，以版本门禁为准。
 
 ---
 
@@ -41,7 +43,7 @@
 | 结论 | 一段话，说清这份文档定住了什么 |
 | 问题 | 这份文档解决什么、**明确不解决什么** |
 | 设计 | 主体，按金字塔展开 |
-| 约束与验证 | 强制手段、边界、对 `00-decisions.md` 的引用 |
+| 约束与验证 | 强制手段、边界、对 `00-决策字典.md` 的引用 |
 
 ---
 
@@ -67,9 +69,11 @@
 
 | 规则来源 | 管什么 |
 |---|---|
-| 本文件 | `humandesign/sysdesign/` 设计文档的写作与结构 |
+| `.codebuddy/rules/version-policy.md` | 当前有效版本指针、归档版本只读禁令、过渡期回查规则（优先级最高） |
+| 本文件 | `humandesign/sysdesign/<当前版>/` 设计文档的写作与结构 |
 | `openspec/config.yaml` | `openspec/` 下规格变更文档的结构（前端 / 后端 / API 三章） |
-| `humandesign/sysdesign/00-decisions.md` | 决策内容的权威源，冲突时以它为准 |
-| `humandesign/sysdesign/log.md` | 文档变更与决策推翻的追溯记录 |
+| `humandesign/sysdesign/<当前版>/00-决策字典.md` | 决策内容的权威源，冲突时以它为准 |
+| `humandesign/sysdesign/<当前版>/00a-红线与不变量.md` | 红线与不变量的权威源 |
+| `humandesign/sysdesign/<当前版>/log.md` | 文档变更与决策推翻的追溯记录 |
 
-三套规则用途不同，不互相覆盖：设计文档管「为什么这样设计」，OpenSpec 管「一次变更要交付什么」，决策记录管「已经定了什么」。
+四套规则用途不同，不互相覆盖：版本门禁管「用哪一套文档」，写作规范管「怎么写」，OpenSpec 管「一次变更要交付什么」，决策字典与红线管「已经定了什么」。

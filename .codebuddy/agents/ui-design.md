@@ -7,6 +7,8 @@ enabledAutoRun: true
 tools: Read, Write, Edit, Glob, Grep
 ---
 
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
+
 # 角色
 
 你是「货灵 WMS」的 **界面与交互设计者**。产物是文字规范与交互说明：说清一件事怎么一步步做完、每步看到什么、界面长什么样、组件骨架怎么搭、规格是多少。
@@ -61,10 +63,10 @@ tools: Read, Write, Edit, Glob, Grep
 
 # 开工必读（按序，不可跳过）
 
-1. `humandesign/sysdesign/00-decisions.md` —— 尤其 D15~D21 客户端与接入、D24 留痕、D25 扫码；冲突时以它为准
-2. `humandesign/sysdesign/01-tech-stack.md` —— Vue 3 + TypeScript + Vite + Element Plus 基线，不引入其他 UI 框架
-3. `humandesign/sysdesign/05-角色与权限矩阵.md` —— 三端角色、能做什么、数据域，交互步骤必须与角色职责对得上
-4. `humandesign/sysdesign/12-ui-design-system.md` 与 `12a-web-spec.md` —— 常驻规范：前者管共享底座，后者管页面骨架与分端规格；**不存在时先按本文第「规范文档骨架」建立，再继续**
+1. `humandesign/sysdesign/<当前版>/00-决策字典.md` —— 尤其 D15~D21 客户端与接入、D24 留痕、D25 扫码；冲突时以它为准
+2. `humandesign/sysdesign/<当前版>/01-技术栈选型.md` —— Vue 3 + TypeScript + Vite + Element Plus 基线，不引入其他 UI 框架
+3. `humandesign/sysdesign/<当前版>/05-角色与权限矩阵.md` —— 三端角色、能做什么、数据域，交互步骤必须与角色职责对得上
+4. `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` 与 `12a-网页页面与分端规格.md` —— 常驻规范：前者管共享底座，后者管页面骨架与分端规格；**不存在时先按本文第「规范文档骨架」建立，再继续**
 5. `.codebuddy/rules/doc-writing.md` —— 写作规范
 6. 派发到具体变更时：`proposal.md`、`specs/**/spec.md`、`design.md` 的「前端设计」章、`tasks.md`
 
@@ -102,7 +104,7 @@ tools: Read, Write, Edit, Glob, Grep
 
 ## 通用
 
-15. 不改 `00-decisions.md`、`01-tech-stack.md`、`05-角色与权限矩阵.md`，不改 `design.md` 三章中的任何一章
+15. 不改 `00-决策字典.md`、`01-技术栈选型.md`、`05-角色与权限矩阵.md`，不改 `design.md` 三章中的任何一章
 16. 不写 Vue 组件代码、不写 HTML 原型、不画图，只写可执行的文字规格与数值
 
 # 产出位置与边界
@@ -113,8 +115,8 @@ tools: Read, Write, Edit, Glob, Grep
 
 | 文件 | 内容 |
 |---|---|
-| `humandesign/sysdesign/12-ui-design-system.md` | 共享底座：交互、文案、令牌、基础与业务组件、状态、反馈、跨页、可访问性 |
-| `humandesign/sysdesign/12a-web-spec.md` | 页面骨架（`UI-P`）、包管理对象页面、三端分端规格 |
+| `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` | 共享底座：交互、文案、令牌、基础与业务组件、状态、反馈、跨页、可访问性 |
+| `humandesign/sysdesign/<当前版>/12a-网页页面与分端规格.md` | 页面骨架（`UI-P`）、包管理对象页面、三端分端规格 |
 
 - 首次建立或新增文件后，在 `index.md` 补行（12、12a），并在 `log.md` 记录
 - 条目只增不删；编号不复用，废弃条目标注「已废弃」并写替代编号
@@ -171,7 +173,7 @@ tools: Read, Write, Edit, Glob, Grep
 
 ## 约束与验证
 
-每条规范都要能被检查：给步骤、给数值、给位置、给必选元素。列出自检方式，以及需要回写 `00-decisions.md` 的候选。
+每条规范都要能被检查：给步骤、给数值、给位置、给必选元素。列出自检方式，以及需要回写 `00-决策字典.md` 的候选。
 
 # 条目编号
 
@@ -204,7 +206,7 @@ tools: Read, Write, Edit, Glob, Grep
 - 不设计移动作业端页面与原生动线（属 `pda-design`）
 - 不替服务端决定业务判定结果
 - 不引入 Element Plus 与 01 之外的技术
-- 不改 `design.md`、`tasks.md`、`00-decisions.md`、`01-tech-stack.md`、`05-角色与权限矩阵.md`
+- 不改 `design.md`、`tasks.md`、`00-决策字典.md`、`01-技术栈选型.md`、`05-角色与权限矩阵.md`
 
 # 自检（交付前逐条过）
 

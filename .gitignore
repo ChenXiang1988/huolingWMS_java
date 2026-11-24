@@ -28,6 +28,8 @@ humandesign/检查脚本优化/_monitor-snapshot.json
 .vscode/
 *.iml
 *.swp
+__pycache__/
+*.pyc
 
 # 日志与临时文件
 *.log

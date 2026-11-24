@@ -23,16 +23,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT = ROOT / "humandesign" / "检查脚本优化" / "_monitor-snapshot.json"
 
+SYSDESIGN = ROOT / "humandesign" / "sysdesign"
+_ptr = SYSDESIGN / "current-version.txt"
+VERSION = (_ptr.read_text(encoding="utf-8").strip() if _ptr.exists() else "") or "v2"
+ACTIVE = "humandesign/sysdesign/%s" % VERSION
+
 EXPLICIT = [
     ".codebuddy/tools/check-design.py",
     ".codebuddy/rules/design-check.md",
-    "humandesign/sysdesign/00-decisions.md",
-    "humandesign/sysdesign/01-tech-stack.md",
-    "humandesign/sysdesign/05-角色与权限矩阵.md",
-    "humandesign/sysdesign/12-ui-design-system.md",
-    "humandesign/sysdesign/13-pda-interaction-design.md",
-    "humandesign/sysdesign/index.md",
-    "humandesign/sysdesign/log.md",
+    ".codebuddy/rules/version-policy.md",
+    ACTIVE + "/00-决策字典.md",
+    ACTIVE + "/00a-红线与不变量.md",
+    ACTIVE + "/21-术语与枚举登记表.md",
+    ACTIVE + "/22-状态机与事务边界总表.md",
+    ACTIVE + "/23-权威源与引用矩阵.md",
+    ACTIVE + "/index.md",
+    ACTIVE + "/log.md",
     "openspec/config.yaml",
 ]
 PATTERNS = [
