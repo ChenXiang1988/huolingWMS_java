@@ -1,0 +1,40 @@
+# 第三方开源项目源码副本，共约 694MB，且各自带 .git（13 个嵌套仓库）
+# 调研笔记留在 humandesign/调研/*.md，源码副本不入库
+humandesign/调研/**/_sources/
+
+# 指纹快照随本地状态每日变化，不属于项目内容
+humandesign/检查脚本优化/_monitor-snapshot.json
+
+# 后端构建产物
+**/target/
+*.class
+*.jar
+*.war
+
+# 前端构建产物与依赖
+**/node_modules/
+**/dist/
+**/.vite/
+*.tsbuildinfo
+
+# Android 构建产物
+**/build/
+*.apk
+*.aab
+
+# 编辑器与系统文件
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# 日志与临时文件
+*.log
+*.tmp
+tmp/
+
+# 本地环境与敏感配置
+.env
+.env.*
+*.local

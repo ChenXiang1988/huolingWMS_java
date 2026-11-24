@@ -1,0 +1,28 @@
+schema: spec-driven
+
+context: |
+  Language: zh-CN
+  All artifacts must be written in zh-CN.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+rules:
+  design:
+    - 必须包含三个一级章节：前端设计、后端设计、API 接口契约
+    - API 接口契约作为前后端约定，逐接口列出：路径、HTTP 方法、请求参数或请求体结构、响应结构、业务错误码、鉴权要求、分页与幂等约定
+    - 前端设计与后端设计章节不得自行推断或替对方决定实现方式，只能引用 API 接口契约章节中已约定的接口
+    - 接口若尚未约定，必须在该章节标为待确认并说明阻塞原因，不得由任一端单独假设
+  tasks:
+    - 任务按「前端 / 后端 / 前后端联调」分组
+    - 联调任务必须引用 API 接口契约中的具体接口
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
