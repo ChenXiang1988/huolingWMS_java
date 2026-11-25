@@ -59,7 +59,7 @@ python3 .codebuddy/tools/check-design.py
 
 进基线前统一跑全量门禁，全绿才算过：
 
-1. `mvn -f code/backend/pom.xml clean verify`（需 JDK 21，本机显式设 `JAVA_HOME`）
+1. `mvn -f code/backend/pom.xml clean verify`（需 JDK 21，本机显式设 `JAVA_HOME`；集成测试连真库，先 `cd code/deploy/local && docker compose up -d`，库没起会红是预期）
 2. `pnpm typecheck && pnpm build`
 3. `python3 .codebuddy/tools/check-design.py`
 4. 改了代理定义或分派规则时加跑 `check-agent-dispatch.py`；改了仓型判定落点时加跑 `code/backend/scripts/check-warehouse-type.sh`
