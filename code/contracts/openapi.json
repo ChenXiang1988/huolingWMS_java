@@ -1,0 +1,4176 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "货灵 WMS 三端接口契约",
+    "version": "v0"
+  },
+  "tags": [],
+  "paths": {
+    "/hub/api/roles/{id}/scopes": {
+      "get": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "scopes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "角色主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListScopeResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "replaceScopes",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "角色主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplaceScopesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/roles/{id}/permissions": {
+      "put": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "assignPermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "角色主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignPermissionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/accounts/{id}/roles": {
+      "put": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "assignRoles",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "账号主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRolesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/owner/archives/{id}": {
+      "put": {
+        "tags": [
+          "owner-archive-controller"
+        ],
+        "operationId": "edit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "档案编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_OWNER：货主越权访问他人档案，或运营代建未指定归属货主",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/roles": {
+      "get": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "client",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "HUB",
+                "SITE",
+                "MOBILE",
+                "OWNER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListRoleResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "refresh",
+        "parameters": [
+          {
+            "name": "refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoginView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/auth/logout": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "logout",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoginView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/accounts": {
+      "get": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "list_2",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ENABLED",
+                "DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseAccountResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "create_1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site/archive-change-requests": {
+      "get": {
+        "tags": [
+          "site-change-request-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "requestNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "archiveId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponseChangeRequestPage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "site-change-request-controller"
+        ],
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法；缺 Idempotency-Key 也按此拒绝",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在本仓可见范围内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：本仓数据依赖或上行通道不可用，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：本仓加接口超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请，或令牌端标识与仓标识不合法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：档案状态不接受变更申请、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/owner/archives": {
+      "get": {
+        "tags": [
+          "owner-archive-controller"
+        ],
+        "operationId": "list_4",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "PENDING",
+                "ACTIVE",
+                "REJECTED",
+                "DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updatedFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "updatedTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段：updateTime、ownerCode、name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "排序方向：asc、desc，缺省 desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseArchiveListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "owner-archive-controller"
+        ],
+        "operationId": "create_3",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_OWNER：货主越权访问他人档案，或运营代建未指定归属货主",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/owner/archives/{id}/submit": {
+      "post": {
+        "tags": [
+          "owner-archive-controller"
+        ],
+        "operationId": "submit",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "档案编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_OWNER：货主越权访问他人档案，或运营代建未指定归属货主",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "RULE_DUPLICATE_CODE、RULE_DUPLICATE_BARCODE：货主内编码或条码重复",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/owner/archives/{id}/disable": {
+      "post": {
+        "tags": [
+          "owner-archive-controller"
+        ],
+        "operationId": "disable",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "档案编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_OWNER：货主越权访问他人档案，或运营代建未指定归属货主",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/auth/site-login": {
+      "post": {
+        "tags": [
+          "site-auth-controller"
+        ],
+        "operationId": "login_1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含凭证错误、站点未登记与多仓声明",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "签发成功：返回 accessToken、siteId、permissions 与 expiresIn；刷新凭证以 httpOnly cookie 下发，不进响应体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/auth/refresh": {
+      "post": {
+        "tags": [
+          "site-auth-controller"
+        ],
+        "operationId": "refresh_1",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "site_refresh_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含刷新凭证失效、已使用与端标识不是 SITE",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "续期成功：返回新 accessToken、siteId、permissions 与 expiresIn；新刷新凭证仍以 httpOnly cookie 下发",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法；请求体与 cookie 都未带刷新凭证时也按此拒绝",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archives": {
+      "get": {
+        "tags": [
+          "hub-archive-controller"
+        ],
+        "operationId": "list_6",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "PENDING",
+                "ACTIVE",
+                "REJECTED",
+                "DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updatedFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "updatedTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段：updateTime、ownerCode、name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "排序方向：asc、desc，缺省 desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseArchiveListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hub-archive-controller"
+        ],
+        "operationId": "create_4",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "403": {
+            "description": "FORBIDDEN_OWNER：货主越权访问他人档案，或运营代建未指定归属货主",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archives/{id}/review": {
+      "post": {
+        "tags": [
+          "hub-archive-controller"
+        ],
+        "operationId": "review",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "档案编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archives/batch": {
+      "post": {
+        "tags": [
+          "hub-archive-controller"
+        ],
+        "operationId": "batch",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内；逐条结论同时写进受理结果摘要",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法；单次上限一百条",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体；逐条结论同时写进受理结果摘要，单条失败不影响其他条目",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archive-change-requests/{id}/review": {
+      "post": {
+        "tags": [
+          "hub-change-request-controller"
+        ],
+        "operationId": "review_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "申请编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：下行或缓存依赖不可用，或受理线程池已满，可重试",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/roles/{id}": {
+      "patch": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "角色主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/accounts/{id}": {
+      "get": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "账号主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAccountResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "account-controller"
+        ],
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "账号主键，十进制字符串",
+            "required": true,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptTicket"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/permissions": {
+      "get": {
+        "tags": [
+          "role-controller"
+        ],
+        "operationId": "permissions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListPermissionGroup"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/auth/me": {
+      "get": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "me",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAccountProfileView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/audit-logs": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "name": "targetAccountId",
+            "in": "query",
+            "description": "目标账号主键，十进制字符串",
+            "required": false,
+            "schema": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseAuditLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hub/api/acceptances/{acceptNo}": {
+      "get": {
+        "tags": [
+          "acceptance-controller"
+        ],
+        "operationId": "detail_1",
+        "parameters": [
+          {
+            "name": "acceptNo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAcceptanceView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/owner/archive-acceptances/{acceptNo}": {
+      "get": {
+        "tags": [
+          "owner-acceptance-controller"
+        ],
+        "operationId": "detail_2",
+        "parameters": [
+          {
+            "name": "acceptNo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/owners": {
+      "get": {
+        "tags": [
+          "owner-selector-controller"
+        ],
+        "operationId": "list_5",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerCode",
+            "in": "query",
+            "description": "货主标识，精确匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "货主展示名，模糊匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseOwnerSelectorPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archive-change-requests": {
+      "get": {
+        "tags": [
+          "hub-change-request-controller"
+        ],
+        "operationId": "list_7",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "siteId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "APPROVED",
+                "REJECTED"
+              ]
+            }
+          },
+          {
+            "name": "requestNo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "archiveId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段：updateTime、ownerCode、name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "排序方向：asc、desc，缺省 desc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseChangeRequestListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hub/archive-acceptances/{acceptNo}": {
+      "get": {
+        "tags": [
+          "hub-acceptance-controller"
+        ],
+        "operationId": "detail_3",
+        "parameters": [
+          {
+            "name": "acceptNo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponseView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site/archives": {
+      "get": {
+        "tags": [
+          "site-archive-controller"
+        ],
+        "operationId": "list",
+        "parameters": [
+          {
+            "name": "ownerCode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "updatedFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "updatedTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponseSnapshotPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/site/archive-acceptances/{acceptNo}": {
+      "get": {
+        "tags": [
+          "site-acceptance-controller"
+        ],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "acceptNo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponseView"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ReplaceScopesRequest": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeRequest"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ScopeRequest": {
+        "type": "object",
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "description": "数据域维度，闭集外返回 SCOPE_6001（枚举 E-14）",
+            "enum": [
+              "OWNER",
+              "WAREHOUSE"
+            ]
+          },
+          "scopeType": {
+            "type": "string",
+            "description": "数据域范围类型，闭集外返回 COMMON_9001（枚举 E-13）",
+            "enum": [
+              "ALL",
+              "LIST"
+            ]
+          },
+          "targetIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "数据域目标标识，十进制字符串；传 JSON 数字返回 COMMON_9001"
+            }
+          }
+        }
+      },
+      "AcceptTicket": {
+        "type": "object",
+        "properties": {
+          "acceptNo": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseAcceptTicket": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AcceptTicket"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AssignPermissionsRequest": {
+        "type": "object",
+        "properties": {
+          "permissionCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AssignRolesRequest": {
+        "type": "object",
+        "properties": {
+          "roleIds": {
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "角色主键，十进制字符串"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "EditRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "ownerCode": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "baseUnit": {
+            "type": "string"
+          },
+          "storageCondition": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "barcodeType": {
+            "type": "string"
+          },
+          "packageSpec": {
+            "type": "string"
+          },
+          "packageConversionRate": {
+            "type": "number"
+          },
+          "netWeight": {
+            "type": "number"
+          },
+          "grossWeight": {
+            "type": "number"
+          },
+          "volume": {
+            "type": "number"
+          },
+          "length": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "highValue": {
+            "type": "boolean"
+          },
+          "hazardous": {
+            "type": "boolean"
+          },
+          "fragile": {
+            "type": "boolean"
+          },
+          "batchManaged": {
+            "type": "boolean"
+          },
+          "serialManaged": {
+            "type": "boolean"
+          },
+          "shelfLifeDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "remark": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ArchiveResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "roleCode": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "client": {
+            "type": "string",
+            "enum": [
+              "HUB",
+              "SITE",
+              "MOBILE",
+              "OWNER"
+            ]
+          }
+        }
+      },
+      "ApiResponseLoginView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginView"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginView": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "accountId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "账号主键，十进制字符串"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "accountName",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "accountName": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateRequest": {
+        "type": "object",
+        "properties": {
+          "archiveId": {
+            "type": "string"
+          },
+          "changeField": {
+            "type": "string"
+          },
+          "targetValue": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "SubmitRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "DisableRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "properties": {
+          "refreshCredential": {
+            "type": "string"
+          },
+          "clientRequestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewRequest": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "reviewReason": {
+            "type": "string"
+          }
+        }
+      },
+      "BatchRequest": {
+        "type": "object",
+        "properties": {
+          "archiveIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "action": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateRoleRequest": {
+        "type": "object",
+        "properties": {
+          "roleName": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "UpdateRequest": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "resetPassword": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponseListRoleResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleResponse"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RoleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "角色主键，十进制字符串"
+          },
+          "roleCode": {
+            "type": "string"
+          },
+          "roleName": {
+            "type": "string"
+          },
+          "client": {
+            "type": "string",
+            "enum": [
+              "HUB",
+              "SITE",
+              "MOBILE",
+              "OWNER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "permissionCodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponseListScopeResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScopeResponse"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ScopeResponse": {
+        "type": "object",
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "enum": [
+              "OWNER",
+              "WAREHOUSE"
+            ]
+          },
+          "scopeType": {
+            "type": "string",
+            "enum": [
+              "ALL",
+              "LIST"
+            ]
+          },
+          "targetIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "数据域目标标识，十进制字符串"
+            }
+          }
+        }
+      },
+      "ApiResponseListPermissionGroup": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionGroup"
+            }
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PermissionGroup": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string"
+          },
+          "moduleName": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionItem"
+            }
+          }
+        }
+      },
+      "PermissionItem": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "AccountProfileView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "账号主键，十进制字符串"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "dataScope": {
+            "$ref": "#/components/schemas/DataScopeView"
+          }
+        }
+      },
+      "ApiResponseAccountProfileView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AccountProfileView"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DataScopeView": {
+        "type": "object",
+        "properties": {
+          "allOwners": {
+            "type": "boolean",
+            "description": "货主域为全部时为 true，此时 ownerIds 为空数组"
+          },
+          "ownerIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "货主标识，十进制字符串"
+            }
+          },
+          "allWarehouses": {
+            "type": "boolean",
+            "description": "仓域为全部时为 true，此时 warehouseIds 为空数组"
+          },
+          "warehouseIds": {
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "仓标识，十进制字符串"
+            }
+          },
+          "empty": {
+            "type": "boolean",
+            "description": "派生标记：任一维度为「指定列表且为空」时为 true，调用方不得当作全部"
+          }
+        }
+      },
+      "ApiResponsePageResponseAuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseAuditLogResponse"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "审计主键，十进制字符串"
+          },
+          "operatorId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "操作者账号主键，十进制字符串"
+          },
+          "targetAccountId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "目标账号主键，十进制字符串；非账号类操作时为 null",
+            "nullable": true
+          },
+          "action": {
+            "type": "string"
+          },
+          "beforeJson": {
+            "type": "string"
+          },
+          "afterJson": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseAuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "账号主键，十进制字符串"
+          },
+          "accountName": {
+            "type": "string"
+          },
+          "employeeId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "员工内部主键，十进制字符串；货主端账号不绑员工，为 null",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENABLED",
+              "DISABLED"
+            ]
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponsePageResponseAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseAccountResponse"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PageResponseAccountResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseAccountResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AccountResponse"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AcceptanceView": {
+        "type": "object",
+        "properties": {
+          "acceptNo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseAcceptanceView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AcceptanceView"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ArchiveResponseChangeRequestListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ChangeRequestListResponse"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeRequestListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChangeRequestView": {
+        "type": "object",
+        "properties": {
+          "requestNo": {
+            "type": "string"
+          },
+          "archiveId": {
+            "type": "string"
+          },
+          "siteId": {
+            "type": "string"
+          },
+          "changeField": {
+            "type": "string"
+          },
+          "targetValue": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "reviewReason": {
+            "type": "string"
+          },
+          "archiveVersion": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uploadStatus": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchiveListResponse": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArchiveSummaryView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchiveResponseArchiveListResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ArchiveListResponse"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchiveSummaryView": {
+        "type": "object",
+        "properties": {
+          "archiveId": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "baseUnit": {
+            "type": "string"
+          },
+          "storageCondition": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "brand": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchiveResponseView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/View"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "JsonNode": {
+        "type": "object"
+      },
+      "View": {
+        "type": "object",
+        "properties": {
+          "acceptNo": {
+            "type": "string"
+          },
+          "acceptStatus": {
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/components/schemas/JsonNode"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ArchiveResponseOwnerSelectorPage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OwnerSelectorPage"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OwnerSelectorPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnerSelectorView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OwnerSelectorView": {
+        "type": "object",
+        "properties": {
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          }
+        }
+      },
+      "SiteApiResponse": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SiteApiResponseSnapshotPage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SnapshotPage"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SnapshotPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SnapshotView": {
+        "type": "object",
+        "properties": {
+          "archiveId": {
+            "type": "string"
+          },
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerCode": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "baseUnit": {
+            "type": "string"
+          },
+          "storageCondition": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stale": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ChangeRequestPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeRequestView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SiteApiResponseChangeRequestPage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ChangeRequestPage"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SiteApiResponseView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/View"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "dataTimestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

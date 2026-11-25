@@ -1,0 +1,52 @@
+/*
+ * 令牌唯一入口（12 的 UI-T27）：品牌色与任何覆盖值全部收敛在本文件，组件与页面只引用 --el-* 变量。
+ * 色板按 12 的 UI-T20~UI-T25 覆盖：暖灰三层背景、交互填充、主色四档衍生、三级边框、控件禁用与只读态。
+ * 错误态沿用 Element Plus 默认、不在本文件覆盖（UI-T25）；图表色板 UI-T28 未启用，不写入。
+ * 主色另补 light-5 与 light-8 两档，来自 UI-T31，只供 Element Plus 内部禁用态与标签浅底使用，页面不直接引用。
+ * 业务页面与组件不得出现十六进制色值、rgb() 或局部颜色变量。
+ */
+:root {
+  /* 主色：暖灰基底配近黑灰主按钮，橙色只保留警告语义，不得作强调或主色（UI-T01） */
+  --el-color-primary: #2E2E2C;
+
+  /* 主色衍生只用四档，不自造中间色（UI-T22：悬浮、按下、选中底、浅边框） */
+  --el-color-primary-light-3: #585854;
+  --el-color-primary-dark-2: #1C1C1A;
+  --el-color-primary-light-7: #B7B6B0;
+  /* 选中底：UI-T21 的「行选中」与 UI-T22 的「选中底」共用同一令牌，只定义一次 */
+  --el-color-primary-light-9: #E9E8E3;
+
+  /* 实现层另补两档，来自 UI-T31：Element Plus 内部禁用态与标签浅底会引用 light-5 与 light-8，页面不直接引用 */
+  --el-color-primary-light-5: #92918B;
+  --el-color-primary-light-8: #D0CEC8;
+
+  /* 背景分三层，页面级、容器级、浮层级不混用（UI-T20） */
+  --el-bg-color-page: #F6F5F2;
+  --el-bg-color: #FDFCFA;
+  --el-bg-color-overlay: #FDFCFA;
+
+  /* 填充只表达交互态（UI-T21：表头与行悬浮、分组标题、只读控件底） */
+  --el-fill-color-light: #F1F0EB;
+  --el-fill-color: #ECEAE4;
+  --el-fill-color-lighter: #F7F6F3;
+
+  /* 边框分三级，控件、分隔线、强调各一级（UI-T23） */
+  --el-border-color: #DCDAD3;
+  --el-border-color-lighter: #EBE9E3;
+  --el-border-color-dark: #C8C6BE;
+
+  /* 控件三态配色固定（UI-T25：禁用态文字与边框；只读与错误态取上列令牌或 Element Plus 默认） */
+  --el-text-color-disabled: #C4C2BC;
+  --el-border-color-light: #E4E1DA;
+
+  /* 布局尺寸，取自 UI-P04 */
+  --wms-topbar-height: 56px;
+  --wms-sidebar-width: 200px;
+  --wms-sidebar-width-collapsed: 64px;
+  --wms-content-min-width: 1200px;
+  --wms-content-max-width: 1440px;
+  --wms-page-padding: 24px;
+
+  /* 配置页左侧节点列，取自 UI-P09（宽 240，上限可拖到 320） */
+  --wms-config-panel-width: 240px;
+}

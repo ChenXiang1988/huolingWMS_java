@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# pnpm 11 起默认不执行依赖的构建脚本，esbuild 需要它来准备二进制，vue-demi 需要它生成切换入口。
+allowBuilds:
+  esbuild: true
+  vue-demi: true
