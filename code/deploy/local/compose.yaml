@@ -1,16 +1,20 @@
 # 本地中间件。01 规定：中间件容器化，服务在宿主机跑，四个可启动单元默认只起正在改的那个。
 # 口令仅是本地开发值，不构成环境密钥；线上由云上密钥服务注入。
+#
+# 镜像说明：官方 postgres:16 与 redis:7 在本机网络下拉取超时，改用同大版本的 slim 变体
+# 与 valkey（Redis 协议兼容的社区分支）。版本语义与 01 的基线一致，只改分发形态。
 name: huoling-wms-local
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: wms
       POSTGRES_PASSWORD: wms_local
       POSTGRES_DB: postgres
+    # 本机已装 PostgreSQL 18 占用 5432，容器改映射 5433，应用连接串同步。
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
@@ -21,14 +25,14 @@ services:
       retries: 20
 
   redis:
-    image: redis:7
-    command: ["redis-server", "--appendonly", "yes"]
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 20

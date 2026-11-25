@@ -7,6 +7,54 @@ spring:
   threads:
     virtual:
       enabled: true
+  datasource:
+    # 每个仓一套独立库（D08）：库名带仓标识，连接串由部署注入。
+    url: ${WMS_SITE_DB_URL:jdbc:postgresql://localhost:5433/wms_site}
+    username: ${WMS_SITE_DB_USERNAME:wms}
+    password: ${WMS_SITE_DB_PASSWORD:wms_local}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  rabbitmq:
+    host: ${WMS_RABBIT_HOST:localhost}
+    port: ${WMS_RABBIT_PORT:5672}
+    username: ${WMS_RABBIT_USERNAME:wms}
+    password: ${WMS_RABBIT_PASSWORD:wms_local}
+  jackson:
+    mapper:
+      allow-coercion-of-scalars: false
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+wms:
+  site:
+    # 本仓标识：令牌里的 siteId 必须与它一致，否则按 FORBIDDEN_SITE 拒绝（本仓不一致即越权）。
+    id: ${WMS_SITE_ID:0}
+  jwt:
+    # 与 Hub 同一套签名密钥，单仓端只验签不签发；线上由云上密钥服务注入。
+    secret: ${WMS_JWT_SECRET:local-dev-only-secret-key-please-change-32bytes}
+  archive:
+    # 单仓端限流阈值（端加本仓加接口）。
+    rate-limit-per-minute: 120
+    downlink:
+      # 灰度开关（design「可观测与兼容回滚」）：关闭时单仓只展示已有缓存与待刷新提示。
+      enabled: ${WMS_ARCHIVE_DOWNLINK_ENABLED:false}
+      queue: ${WMS_ARCHIVE_QUEUE:wms.archive.sku.site}
+      exchange: ${WMS_ARCHIVE_EXCHANGE:wms.archive.events}
+      routing-key: ${WMS_ARCHIVE_ROUTING_KEY:wms.archive.sku}
+    uplink:
+      # 变更申请上行到 Hub 的地址（写入 Hub 权威表）。未配置时申请留在本仓待上行，
+      # 不伪造成已上行；具体路径与鉴权方式待契约方确认（已登记为契约缺口）。
+      url: ${WMS_ARCHIVE_UPLINK_URL:}
+      token: ${WMS_ARCHIVE_UPLINK_TOKEN:}
+      interval-ms: 30000
+      batch-size: 20
 
 management:
   endpoints:

@@ -14,6 +14,11 @@
   <name>wms-site</name>
   <description>单仓端，可启动单元；库存真值、库位、任务、收发存</description>
 
+  <properties>
+    <mybatis-plus.version>3.5.9</mybatis-plus.version>
+    <jjwt.version>0.12.6</jjwt.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.huoling.wms</groupId>
@@ -33,9 +38,77 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
+    <!-- 单仓生效档案缓存（site_sku_snapshot）与本地受理、申请暂存都要落库；每仓一套独立库（D08）。 -->
+    <dependency>
+      <groupId>com.baomidou</groupId>
+      <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+      <version>${mybatis-plus.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.baomidou</groupId>
+      <artifactId>mybatis-plus-jsqlparser</artifactId>
+      <version>${mybatis-plus.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <!-- 单仓端令牌验签：与 Hub 共用同一套签名密钥，只解析不签发（契约「单仓端会话与权限」）。 -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- 契约由服务端导出（01「接口契约由服务端导出，各端只消费生成物」）：Site 的 /v3/api-docs 产出源。 -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.6.0</version>
+    </dependency>
+    <!-- 下行事件消费（RabbitMQ）：灰度开关关闭时不建监听容器。 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+      <!-- 迁移脚本按执行单元分目录（01「迁移脚本按执行单元分目录」）：Site 只加载自己的脚本。 -->
+      <resource>
+        <directory>../../db/migration/site</directory>
+        <targetPath>db/migration</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
