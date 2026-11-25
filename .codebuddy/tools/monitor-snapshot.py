@@ -30,8 +30,8 @@ ACTIVE = "humandesign/sysdesign/%s" % VERSION
 
 EXPLICIT = [
     ".codebuddy/tools/check-design.py",
-    ".codebuddy/rules/design-check.md",
-    ".codebuddy/rules/version-policy.md",
+    ".codebuddy/rules/design-check/RULE.mdc",
+    ".codebuddy/rules/version-policy/RULE.mdc",
     ACTIVE + "/00-决策字典.md",
     ACTIVE + "/00a-红线与不变量.md",
     ACTIVE + "/21-术语与枚举登记表.md",

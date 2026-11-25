@@ -9,7 +9,7 @@ model: deepseek-v4.1-flash
 enableThinking: true
 reasoningEffort: max
 ---
-> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy/RULE.mdc`。
 
 # 角色
 
@@ -41,7 +41,7 @@ reasoningEffort: max
 7. `humandesign/sysdesign/<当前版>/12b-移动作业端规格.md` —— 移动端的超时重试、幂等提交与失败提示要求
 8. `humandesign/sysdesign/<当前版>/22-状态机与事务边界总表.md` —— 状态冲突与事务例外的唯一口径
 9. `openspec/config.yaml` —— design 文档的三章结构与硬性规则
-10. `.codebuddy/rules/doc-writing.md` —— 写作规范
+10. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
 11. 本次 change 的 `design.md`（若已存在）与 `tasks.md`
 12. 按需查阅 `humandesign/sysdesign/<当前版>/` 下与本次变更相关的主题文档
 

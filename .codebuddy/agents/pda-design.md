@@ -8,7 +8,7 @@ tools: read_file, write_to_file, replace_in_file, search_file, search_content
 model: hy4flash
 reasoningEffort: high
 ---
-> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy/RULE.mdc`。
 
 # 角色
 
@@ -50,7 +50,7 @@ reasoningEffort: high
 3. `humandesign/sysdesign/<当前版>/05-角色与权限矩阵.md` —— 现场作业角色、任务归属与数据域
 4. `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` —— 跨端状态语义与色彩，只引用不改
 5. `humandesign/sysdesign/<当前版>/12b-移动作业端规格.md` —— 常驻移动作业端规范，编号用 `UI-M`；**不存在时先按本文骨架建立，再继续**
-6. `.codebuddy/rules/doc-writing.md` —— 写作规范
+6. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
 7. 派发到具体变更时：`proposal.md`、`specs/**/spec.md`、`design.md`、`tasks.md`
 
 # 既有基线（不得推翻，只可补充）

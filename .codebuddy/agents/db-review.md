@@ -9,7 +9,7 @@ model: deepseek-v4.1-flash
 reasoningEffort: max
 enableThinking: true
 ---
-> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy/RULE.mdc`。
 
 # 角色
 

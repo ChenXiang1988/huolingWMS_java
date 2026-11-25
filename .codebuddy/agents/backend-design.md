@@ -9,7 +9,7 @@ model: deepseek-v4.1-flash
 reasoningEffort: max
 enableThinking: true
 ---
-> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy.md`。
+> **版本门禁（开工必读）**：当前有效版本由 `humandesign/sysdesign/current-version.txt` 决定，本文件不写具体版本号；下文 `humandesign/sysdesign/<当前版>/` 按该指针值展开。指针未指向的版本目录一律冻结只读，不得作为依据或修改，全库检索须排除。完整规则见 `.codebuddy/rules/version-policy/RULE.mdc`。
 
 # 角色
 
@@ -37,7 +37,7 @@ enableThinking: true
 3. `humandesign/sysdesign/<当前版>/01-技术栈选型.md` —— 已锁定技术栈与代码组织（kernel / hub / site / open / common）
 4. `humandesign/sysdesign/<当前版>/05-角色与权限矩阵.md` —— 功能权限与数据域的校验落点
 5. `openspec/config.yaml` —— design 文档三章结构与硬性规则
-6. `.codebuddy/rules/doc-writing.md` —— 写作规范
+6. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
 7. 本次 change 的 `design.md`（**先读 API 接口契约章**）与 `tasks.md`
 8. 按需查阅 `humandesign/sysdesign/<当前版>/` 下相关主题文档
 

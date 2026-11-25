@@ -1,3 +1,9 @@
+---
+description: 设计文档校验：check-design.py 的执行时机、格式契约、结果处置与检查项分组
+alwaysApply: false
+enabled: true
+---
+
 # 设计文档校验规则
 
 `design.md` 写完不算完成，必须过校验脚本。脚本能查的不用人眼，人眼只查脚本查不到的。
@@ -71,7 +77,7 @@ python3 .codebuddy/tools/check-design.py --list-checks
 
 硬禁止：为了让检查变绿而把章节写成空话、把 `待确认` 换成编造的答案、删掉 `关联不变量` 列。检查器拦的是格式，拦不住糊弄；这两件事要一起管。
 
-**已知遗留项**：29 份文档已全部迁入，运行 `--only norms` 当前会报 `NORM-04`、`NORM-06`、`NORM-07`，根因是脚本的「12 号必备编号与色值」契约与 v2 的 `12`／`12a` 分工不一致（页面骨架定义归 `12a`，脚本仍要求在 `12` 内定义）。这是 v1 既有的契约缺陷，已登记 `v2/23` 待定项；不得删检查项、改 `optional` 或调正则来让检查变绿，须作为独立变更修订契约并登记原因。版本门禁见 `.codebuddy/rules/version-policy.md`。
+**已知遗留项**：29 份文档已全部迁入，运行 `--only norms` 当前会报 `NORM-04`、`NORM-06`、`NORM-07`，根因是脚本的「12 号必备编号与色值」契约与 v2 的 `12`／`12a` 分工不一致（页面骨架定义归 `12a`，脚本仍要求在 `12` 内定义）。这是 v1 既有的契约缺陷，已登记 `v2/23` 待定项；不得删检查项、改 `optional` 或调正则来让检查变绿，须作为独立变更修订契约并登记原因。版本门禁见 `.codebuddy/rules/version-policy/RULE.mdc`。
 
 ## 五、检查项分组
 
@@ -86,7 +92,7 @@ python3 .codebuddy/tools/check-design.py --list-checks
 | 鲁棒性与幂等 | 契约章是否含鲁棒性、幂等约定、契约验收；写接口幂等要素；错误码表列；接口条目的超时、限流、降级、并发、验收 | `api-design` 通用约定与 D21 |
 | 跨章对账 | 页面映射、联调任务、错误码、接口落点、不变量手段的引用闭合 | 契约章为唯一源 |
 | 规范文档 | 12 号与 13 号的四段骨架、`UI-*` / `PDA-*` 编号定义唯一与引用闭合、范围覆盖、必备条目、色值约束、离线禁用词、index 登记、`pda.md` 变更差异引用闭合 | 12 号自身编号体系、`pda-design` 定义、D16 |
-| 版本门禁 | 产物不得引用非当前版本路径；确需溯源须标注并降级为警告 | `current-version.txt`、`.codebuddy/rules/version-policy.md` |
+| 版本门禁 | 产物不得引用非当前版本路径；确需溯源须标注并降级为警告 | `current-version.txt`、`.codebuddy/rules/version-policy/RULE.mdc` |
 
 ## 六、局限（必须说清）
 
@@ -105,7 +111,7 @@ python3 .codebuddy/tools/check-design.py --list-checks
 |---|---|
 | `openspec/config.yaml` | 三章结构与章节硬性内容要求 |
 | `.codebuddy/agents/*.md` | 每个子 agent 的写作标准与自检清单 |
-| `.codebuddy/rules/version-policy.md` | 当前有效版本指针、归档版本只读禁令、过渡期回查规则 |
+| `.codebuddy/rules/version-policy/RULE.mdc` | 当前有效版本指针、归档版本只读禁令、过渡期回查规则 |
 | `humandesign/sysdesign/current-version.txt` | 机器可读的当前版本指针，脚本从此解析目录 |
 | 本文件 | 校验的执行时机、格式契约、结果处置 |
 | `humandesign/sysdesign/<当前版>/00-决策字典.md` | 决策与编号的权威源，冲突时以它为准 |
