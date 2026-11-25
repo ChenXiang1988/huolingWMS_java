@@ -24,9 +24,12 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -193,35 +196,72 @@ class SiteArchiveApiIT extends SiteDbTestSupport {
     void 变更申请列表排序与翻页契约() {
         String runTag = "api-page-" + nextId();
         String[] fields = {"spec", "category", "name"};
+        List<String> created = new ArrayList<>(fields.length);
         for (String field : fields) {
             String archiveNo = applySnapshot("T-A-" + field, runTag + "-" + field, "ACTIVE", 6L,
                 Instant.now());
-            registerRequestNo(changeRequestService.create(SITE_ID, archiveNo, field, runTag + "-值",
-                "排序用例", "SAC-" + nextId()).requestNo());
+            String acceptNo = "SAC-" + nextId();
+            // 受理号先登记再落库：申请行一进库就出现在列表里，之后任何断言失败都不能把它留成残留
+            registerAcceptNo(acceptNo);
+            String requestNo = changeRequestService.create(SITE_ID, archiveNo, field,
+                runTag + "-值", "排序用例", acceptNo).requestNo();
+            registerRequestNo(requestNo);
+            created.add(requestNo);
         }
         String token = siteToken("1001", List.of(ArchivePermissionCodes.SITE_READ));
 
-        ResponseEntity<Map<String, Object>> firstPage = call(HttpMethod.GET,
-            "/api/site/archive-change-requests?sortBy=name&sortDir=asc&limit=2", token);
-        assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
-        Map<String, Object> first = dataOf(firstPage);
-        List<String> firstFields = changeFields(first);
-        assertThat(firstFields).hasSize(2).isSorted();
-        assertThat(first.get("hasMore")).isEqualTo(Boolean.TRUE);
-        assertThat(first.get("nextCursor").toString()).isNotBlank();
+        // API-014 只按站点过滤，不认运行时标记：同库上历史运行遗留的申请行无法用请求参数排除，
+        // 断言因此不能建立在「表里只有本次这三条」上。改为先取一次库内快照，再用
+        // 「翻页结果覆盖快照 + 全局升序 + 申请编号不重复」验键集翻页不重不漏。
+        Set<String> existing = new LinkedHashSet<>(jdbc.queryForList(
+            "select request_no from site_archive_change_request where site_id = ?",
+            String.class, SITE_ID));
 
-        ResponseEntity<Map<String, Object>> secondPage = call(HttpMethod.GET,
-            "/api/site/archive-change-requests?sortBy=name&sortDir=asc&limit=2&cursor="
-                + first.get("nextCursor"), token);
-        Map<String, Object> second = dataOf(secondPage);
-        List<String> secondFields = changeFields(second);
-        assertThat(second.get("hasMore")).isEqualTo(Boolean.FALSE);
-        assertThat(second.get("nextCursor")).isNull();
+        int limit = 2;
+        List<String> pagedFields = new ArrayList<>();
+        List<String> pagedRequestNos = new ArrayList<>();
+        String cursor = null;
+        int pages = 0;
+        boolean hasMore;
+        do {
+            String path = "/api/site/archive-change-requests?sortBy=name&sortDir=asc&limit=" + limit
+                + (cursor == null ? "" : "&cursor=" + cursor);
+            Map<String, Object> page = dataOf(call(HttpMethod.GET, path, token));
+            List<Map<String, Object>> items = itemsOf(page);
+            pages++;
 
-        // 两页合起来正好是三条，且按申请字段升序；没有重复
-        List<String> paged = new java.util.ArrayList<>(firstFields);
-        paged.addAll(secondFields);
-        assertThat(paged).hasSize(3).isSorted().doesNotHaveDuplicates();
+            assertThat(items).as("第 %d 页不超过 limit", pages).hasSizeLessThanOrEqualTo(limit);
+            assertThat(changeFields(items)).as("第 %d 页按申请字段升序", pages).isSorted();
+            if (pages == 1) {
+                // 库内至少已有本次三条申请：首页必按 limit 取满，且不是最后一页
+                assertThat(items).as("首页按 limit 取满").hasSize(limit);
+                assertThat(page.get("hasMore")).as("首页之后还有下一页").isEqualTo(Boolean.TRUE);
+            }
+            hasMore = Boolean.TRUE.equals(page.get("hasMore"));
+            Object nextCursor = page.get("nextCursor");
+            if (hasMore) {
+                assertThat(nextCursor).as("还有下一页时下一页锚点必填").isNotNull();
+                assertThat(nextCursor.toString()).isNotBlank();
+                cursor = nextCursor.toString();
+            } else {
+                assertThat(nextCursor).as("末页不返回下一页锚点").isNull();
+            }
+            items.forEach(item -> {
+                pagedFields.add(item.get("changeField").toString());
+                pagedRequestNos.add(item.get("requestNo").toString());
+            });
+            assertThat(pages).as("翻页超过 50 页仍未结束，游标可能无法前进").isLessThan(50);
+        } while (hasMore);
+
+        // 键集翻页至少要翻两页才算验到；合并结果全局升序，库内已有申请一条不漏、同一申请不重复
+        assertThat(pages).as("limit=2 且库内至少三条申请，至少要翻两页").isGreaterThanOrEqualTo(2);
+        assertThat(pagedFields).as("合并结果全局按申请字段升序").isSorted();
+        assertThat(pagedRequestNos).as("同一申请不得跨页重复出现").doesNotHaveDuplicates();
+        assertThat(pagedRequestNos).as("翻页不得漏掉库内已有申请").containsAll(existing);
+        for (String requestNo : created) {
+            assertThat(pagedRequestNos.stream().filter(requestNo::equals).count())
+                .as("本次申请 %s 在合并结果里恰好出现一次", requestNo).isEqualTo(1L);
+        }
     }
 
     @Test
@@ -300,8 +340,11 @@ class SiteArchiveApiIT extends SiteDbTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> changeFields(Map<String, Object> page) {
-        List<Map<String, Object>> items = (List<Map<String, Object>>) page.get("items");
+    private List<Map<String, Object>> itemsOf(Map<String, Object> page) {
+        return (List<Map<String, Object>>) page.get("items");
+    }
+
+    private List<String> changeFields(List<Map<String, Object>> items) {
         return items.stream().map(item -> item.get("changeField").toString()).toList();
     }
 

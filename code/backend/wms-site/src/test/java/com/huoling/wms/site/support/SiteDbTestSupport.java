@@ -62,6 +62,12 @@ public abstract class SiteDbTestSupport {
         for (String requestNo : requestNos) {
             jdbc.update("delete from site_archive_change_request where request_no = ?", requestNo);
         }
+        // 受理号补一道兜底：申请行一落库就进列表，而 request_no 只能从受理结果里反查，
+        // 用例在拿到它之前失败（或进程中断）就永远登记不上，那一行会留成下一次运行的脏数据。
+        // 受理号由本次运行生成，按它删只命中本次受理自己写下的那条申请行，不扩大清理范围。
+        for (String acceptNo : acceptNos) {
+            jdbc.update("delete from site_archive_change_request where accept_no = ?", acceptNo);
+        }
         for (String acceptNo : acceptNos) {
             jdbc.update("delete from site_archive_acceptance where accept_no = ?", acceptNo);
         }
@@ -102,6 +108,12 @@ public abstract class SiteDbTestSupport {
         }
     }
 
+    /**
+     * 登记受理号：收尾时按它清理受理记录，以及本次受理写下的那条申请行。
+     *
+     * <p>受理号是运行内生成、落库前就已知的唯一键；{@code request_no} 只能从受理结果里反查，
+     * 用例在拿到它之前失败时，靠受理号才收得干净。
+     */
     protected void registerAcceptNo(String acceptNo) {
         if (acceptNo != null) {
             acceptNos.add(acceptNo);

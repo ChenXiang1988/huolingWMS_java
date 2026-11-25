@@ -57,6 +57,25 @@
           </execution>
         </executions>
       </plugin>
+      <!--
+        集成测试随 verify 执行：surefire 只跑 *Test，failsafe 只跑 *IT，两套各管一段，互不覆盖。
+        版本由 spring-boot-starter-parent（3.3.5）管理，不显式写 version；不加 skipITs、不包 profile，
+        mvn verify 必须真跑 *IT。
+        执行不写 id（默认即 default），与父级 pluginManagement 里的同名执行合并为一次：
+        另起 id 会与父级执行各跑一遍，导致 *IT 重复执行。
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
