@@ -19,7 +19,8 @@
 ## 大局
 
 - 权威顺序：`00` 决策 → `00a` 红线 → 主题文档；枚举、状态机、待定项与冲突裁定见 `sysdesign/<当前版>/23-权威源与引用矩阵.md`。
-- 一次变更的产物与三章结构见 `openspec/config.yaml`，写作与校验规则见 `.codebuddy/rules/<规则名>/RULE.mdc`；阶段顺序与四道门禁见 `delivery-loop/RULE.mdc`。
+- 一次变更的产物与三章结构见 `openspec/config.yaml`；行为约束见 `.codebuddy/rules/` 下四份常驻规则，写作规范、校验用法与项目速查见 `.codebuddy/references/`；阶段顺序与四道门禁见 `delivery-loop/RULE.mdc`。
+- 本地开发生命周期见 `.codebuddy/rules/dev-lifecycle/RULE.mdc`：中间件容器化，应用服务宿主机运行，启动查重、运行登记、收尾按当前项目边界清理。
 - 主干 `main`；每个变更从最新 `main` 切 `feature/<变更名>`，一条分支只装一个变更，规格定稿与实现分两次提交。
 - 技术栈以 `sysdesign/<当前版>/01-技术栈选型.md` 为准，本文不重复。
 - 跨境关务与物流段不归本系统：只消费下层服务返回的结果摘要，不发起申报、不参与状态转换、不新增关务字段。

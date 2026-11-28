@@ -56,4 +56,8 @@ public interface OutboxMapper extends BaseMapper<OutboxPO> {
     int markFailed(@Param("id") Long id,
                    @Param("error") String error,
                    @Param("now") OffsetDateTime now);
+
+    /** 回读重试次数：投递器据此判断是否已到死信阈值（多副本下以库里的值为准，不用内存计数）。 */
+    @Select("select retry_count from hub_outbox where id = #{id}")
+    Integer findRetryCount(@Param("id") Long id);
 }

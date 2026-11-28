@@ -55,12 +55,29 @@ wms:
       token: ${WMS_ARCHIVE_UPLINK_TOKEN:}
       interval-ms: 30000
       batch-size: 20
+  owner:
+    # 货主状态下行与受理前闸门（tasks 1.14）：两个开关分开，对应上线顺序的第 ⑤ 步与第 ⑥ 步。
+    downlink:
+      # 只消费不拦截阶段先打开它；关闭时整个监听组件不装配，单仓不连消息中间件。
+      enabled: ${WMS_OWNER_DOWNLINK_ENABLED:false}
+      queue: ${WMS_OWNER_QUEUE:wms.owner.status.site}
+      exchange: ${WMS_ARCHIVE_EXCHANGE:wms.archive.events}
+      routing-key: ${WMS_OWNER_ROUTING_KEY:wms.owner.status}
+      # 死信队列：消费失败的消息由队列的死信交换投到这里，供按 eventId 重放；拓扑由部署配置声明。
+      dead-letter-queue: ${WMS_OWNER_DEAD_LETTER_QUEUE:wms.owner.status.dlq}
+    blocking:
+      # 受理前闸门：默认关闭，副本覆盖率确认后再打开；回滚即关闭（恢复「不拦截」）。
+      enabled: ${WMS_OWNER_BLOCKING_ENABLED:false}
+      # 副本数据超过该时长未更新即视为长期失联，闸门拒绝放行；与告警阈值 5 分钟错开。
+      stale-threshold: ${WMS_OWNER_BLOCKING_STALE_THRESHOLD:1h}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # metrics 与 Hub 侧同一口径：tasks 1.18 要求「指标可在本地端点观察」，
+        # 闸门的两项指标（拒绝按原因、放行、副本未命中）在单仓端，不暴露就读不到。
+        include: health,info,metrics
   endpoint:
     health:
       probes:

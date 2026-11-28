@@ -30,6 +30,14 @@ public interface AccountRepository {
     long countEnabledByRoleCode(String roleCode);
 
     /**
+     * 取某个货主下所有账号的标识（不区分账号状态）。
+     *
+     * <p>停用货主后要撤销这些账号的刷新令牌：已停用的账号也一并撤销，
+     * 避免「先停用账号、后停用货主、再重新启用账号」时旧刷新令牌复活（契约 1.7）。
+     */
+    java.util.List<Long> findIdsByOwnerId(Long ownerId);
+
+    /**
      * 按提交版本推进账号版本号：{@code update ... where id = ? and version = ?}。
      *
      * @return 受影响行数为 1 表示抢到这次修改；0 表示版本已被他人推进（COMMON_9004）

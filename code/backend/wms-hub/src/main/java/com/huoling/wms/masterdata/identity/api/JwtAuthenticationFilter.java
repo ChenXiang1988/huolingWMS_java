@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huoling.wms.masterdata.identity.domain.ClientType;
 import com.huoling.wms.masterdata.identity.domain.IdentityErrorCodes;
 import com.huoling.wms.masterdata.identity.domain.IdentityException;
+import com.huoling.wms.masterdata.identity.domain.OwnerSessionGuard;
 import com.huoling.wms.masterdata.identity.domain.TokenBlacklist;
 import com.huoling.wms.masterdata.identity.infrastructure.JwtTokenService;
 import org.springframework.http.HttpHeaders;
@@ -21,7 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 /**
- * 第一道门（见 design「鉴权链路」）：验签、过期、{@code jti} 黑名单、端标识，任一不过返回 401 {@code AUTH_1002}。
+ * 第一道门（见 design「鉴权链路」）：验签、过期、{@code jti} 黑名单、端标识、
+ * 货主端会话可用性，任一不过返回 401（前四项 {@code AUTH_1002}，会话可用性 {@code AUTH_1003}）。
  *
  * <p>落点在这里而不是权限拦截器：拦截器只对带 {@code @RequiresPermission} 的方法生效，
  * 而 {@code /auth/me}、{@code /auth/logout}、{@code /acceptances/**} 这类只需令牌的接口没有权限点注解，
@@ -50,11 +52,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final TokenBlacklist blacklist;
     private final ObjectMapper objectMapper;
     private final Set<ClientType> allowedClients;
+    private final OwnerSessionGuard ownerSessions;
 
     /** 运营端默认形态：只接受运营端令牌。 */
     public JwtAuthenticationFilter(JwtTokenService tokenService, TokenBlacklist blacklist,
-                                   ObjectMapper objectMapper) {
-        this(tokenService, blacklist, objectMapper, Set.of(ClientType.HUB));
+                                   ObjectMapper objectMapper, OwnerSessionGuard ownerSessions) {
+        this(tokenService, blacklist, objectMapper, Set.of(ClientType.HUB), ownerSessions);
     }
 
     /**
@@ -65,11 +68,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 过滤器只做令牌层面的验签、过期、黑名单与端白名单。
      */
     public JwtAuthenticationFilter(JwtTokenService tokenService, TokenBlacklist blacklist,
-                                   ObjectMapper objectMapper, Set<ClientType> allowedClients) {
+                                   ObjectMapper objectMapper, Set<ClientType> allowedClients,
+                                   OwnerSessionGuard ownerSessions) {
         this.tokenService = tokenService;
         this.blacklist = blacklist;
         this.objectMapper = objectMapper;
         this.allowedClients = allowedClients;
+        this.ownerSessions = ownerSessions;
     }
 
     @Override
@@ -98,6 +103,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             reject(response, "令牌端标识不匹配，请重新登录");
             return;
         }
+        // 五：货主端会话可用性。货主停用后，已签发的访问令牌在下一次请求即失效（契约 1.7）。
+        // 判定走带版本号的缓存，停用提交后版本号一 bump，这里的下一次请求就回源拿到停用状态。
+        if (user.client() == ClientType.OWNER && !ownerSessions.usable(user.accountId())) {
+            rejectAccountDisabled(response, "账号所属货主已停用，请联系运营管理员");
+            return;
+        }
         chain.doFilter(request, response);
     }
 
@@ -108,13 +119,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void reject(HttpServletResponse response, String message) throws IOException {
+        reject(response, IdentityErrorCodes.AUTH_TOKEN_INVALID,
+            message == null ? "令牌无效或已过期" : message);
+    }
+
+    /**
+     * 会话可用性拒绝：401 {@code AUTH_1003}（按「账号不可用」处置，不新增错误码）。
+     *
+     * <p>与令牌无效区分开：调用方据此提示「联系管理员」而不是「重新登录」——
+     * 重新登录也不会成功，货主停用期间该账号在任何入口都进不去。
+     */
+    private void rejectAccountDisabled(HttpServletResponse response, String message) throws IOException {
+        reject(response, IdentityErrorCodes.AUTH_ACCOUNT_DISABLED, message);
+    }
+
+    private void reject(HttpServletResponse response, String code, String message) throws IOException {
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         objectMapper.writeValue(response.getOutputStream(), ApiResponse.fail(
-            ErrorEnvelope.wireCode(IdentityErrorCodes.AUTH_TOKEN_INVALID),
-            message == null ? "令牌无效或已过期" : message,
-            ErrorEnvelope.traceId(),
-            ErrorEnvelope.retryable(IdentityErrorCodes.AUTH_TOKEN_INVALID)));
+            ErrorEnvelope.wireCode(code), message, ErrorEnvelope.traceId(),
+            ErrorEnvelope.retryable(code)));
     }
 }

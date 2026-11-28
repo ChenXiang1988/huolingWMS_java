@@ -2,6 +2,8 @@ package com.huoling.wms.site.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * 单仓端配置：本仓标识、令牌密钥、限流阈值、下行灰度开关与上行地址。
  *
@@ -14,6 +16,15 @@ public class SiteProperties {
     private Site site = new Site();
     private Jwt jwt = new Jwt();
     private Archive archive = new Archive();
+    private Owner owner = new Owner();
+
+    public Owner getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Owner owner) {
+        this.owner = owner;
+    }
 
     public Site getSite() {
         return site;
@@ -134,6 +145,108 @@ public class SiteProperties {
 
         public void setRoutingKey(String routingKey) {
             this.routingKey = routingKey;
+        }
+    }
+
+    /**
+     * 货主状态域配置（tasks 1.14）：下行消费与受理前闸门。
+     *
+     * <p>两个开关分开，对应 design「上线顺序」的第 ⑤ 步与第 ⑥ 步：
+     * 先把下行队列绑上（只消费不拦截），确认副本覆盖率后再打开闸门。
+     */
+    public static class Owner {
+
+        private Downlink downlink = new Downlink();
+        private Blocking blocking = new Blocking();
+
+        public Downlink getDownlink() {
+            return downlink;
+        }
+
+        public void setDownlink(Downlink downlink) {
+            this.downlink = downlink;
+        }
+
+        public Blocking getBlocking() {
+            return blocking;
+        }
+
+        public void setBlocking(Blocking blocking) {
+            this.blocking = blocking;
+        }
+
+        /** 货主状态下行消费：关闭时不建监听容器，本仓不连消息中间件。 */
+        public static class Downlink {
+
+            private boolean enabled;
+            private String queue = "wms.owner.status.site";
+            private String exchange = "wms.archive.events";
+            private String routingKey = "wms.owner.status";
+            private String deadLetterQueue = "wms.owner.status.dlq";
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public String getQueue() {
+                return queue;
+            }
+
+            public void setQueue(String queue) {
+                this.queue = queue;
+            }
+
+            public String getExchange() {
+                return exchange;
+            }
+
+            public void setExchange(String exchange) {
+                this.exchange = exchange;
+            }
+
+            public String getRoutingKey() {
+                return routingKey;
+            }
+
+            public void setRoutingKey(String routingKey) {
+                this.routingKey = routingKey;
+            }
+
+            public String getDeadLetterQueue() {
+                return deadLetterQueue;
+            }
+
+            public void setDeadLetterQueue(String deadLetterQueue) {
+                this.deadLetterQueue = deadLetterQueue;
+            }
+        }
+
+        /** 受理前闸门：默认关闭（副本覆盖率确认后再打开，回滚即关掉它）。 */
+        public static class Blocking {
+
+            private boolean enabled;
+            private Duration staleThreshold = Duration.ofHours(1);
+
+            public boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            /** 副本数据时间超过它即视为长期失联，闸门拒绝放行（缺省 1 小时）。 */
+            public Duration getStaleThreshold() {
+                return staleThreshold;
+            }
+
+            public void setStaleThreshold(Duration staleThreshold) {
+                this.staleThreshold = staleThreshold;
+            }
         }
     }
 

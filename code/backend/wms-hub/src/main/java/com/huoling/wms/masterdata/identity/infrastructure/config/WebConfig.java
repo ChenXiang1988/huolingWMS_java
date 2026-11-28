@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huoling.wms.masterdata.identity.api.JwtAuthenticationFilter;
 import com.huoling.wms.masterdata.identity.api.PermissionInterceptor;
 import com.huoling.wms.masterdata.identity.domain.ClientType;
+import com.huoling.wms.masterdata.identity.domain.OwnerSessionGuard;
 import com.huoling.wms.masterdata.identity.domain.TokenBlacklist;
 import com.huoling.wms.masterdata.identity.infrastructure.JwtTokenService;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -39,24 +40,31 @@ public class WebConfig implements WebMvcConfigurer {
      * 第一道门挂在 {@code /hub/api/*}：验签、过期、{@code jti} 黑名单、端标识。
      * 不走 {@code @Component} 自动注册，避免被容器以 {@code /*} 再注册一遍而误拦健康检查与文档。
      */
+    /**
+     * 第一道门挂在 {@code /hub/api/*}：验签、过期、{@code jti} 黑名单、端标识、货主端会话可用性。
+     * 不走 {@code @Component} 自动注册，避免被容器以 {@code /*} 再注册一遍而误拦健康检查与文档。
+     */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilter(
-            JwtTokenService tokenService, TokenBlacklist blacklist, ObjectMapper objectMapper) {
+            JwtTokenService tokenService, TokenBlacklist blacklist, ObjectMapper objectMapper,
+            OwnerSessionGuard ownerSessions) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration =
-            new FilterRegistrationBean<>(new JwtAuthenticationFilter(tokenService, blacklist, objectMapper));
+            new FilterRegistrationBean<>(new JwtAuthenticationFilter(tokenService, blacklist,
+                objectMapper, ownerSessions));
         registration.setName("jwtAuthenticationFilter");
         registration.addUrlPatterns("/hub/api/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 20);
         return registration;
     }
 
-    /** 商品档案三端接口的第一道门：同一套验签、过期与黑名单，端白名单放宽到三端。 */
+    /** 商品档案三端接口的第一道门：同一套验签、过期、黑名单与会话可用性，端白名单放宽到三端。 */
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> archiveAuthenticationFilter(
-            JwtTokenService tokenService, TokenBlacklist blacklist, ObjectMapper objectMapper) {
+            JwtTokenService tokenService, TokenBlacklist blacklist, ObjectMapper objectMapper,
+            OwnerSessionGuard ownerSessions) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration =
             new FilterRegistrationBean<>(new JwtAuthenticationFilter(tokenService, blacklist, objectMapper,
-                Set.of(ClientType.HUB, ClientType.OWNER, ClientType.SITE)));
+                Set.of(ClientType.HUB, ClientType.OWNER, ClientType.SITE), ownerSessions));
         registration.setName("archiveAuthenticationFilter");
         registration.addUrlPatterns("/api/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 21);

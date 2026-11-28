@@ -76,6 +76,20 @@ ERRCODE_RE = re.compile(r"\b([A-Z][A-Z0-9]{2,}(?:_[A-Z0-9]+)+)\b")
 
 EXEMPT_WORDS = ("禁止", "不得", "不允许", "严禁", "不含", "不要", "without", "avoid")
 
+# 窄范围变更（纯呈现层或工具类变更）的判定依据：契约章无接口条目，
+# 且契约章与后端章各自写明「本次无接口变更」「本次无表结构变更」。
+SCOPE_EXEMPT_BASIS = "契约章声明无接口变更且无接口条目、后端章声明无表结构变更"
+
+# 窄范围变更下整组跳过的检查组，按 CHECKS 里的 code 字符串精确匹配。
+# 执行循环与 --list-checks 共用这一份，不允许另抄一份清单。
+SCOPE_EXEMPT_CODES = (
+    "API-01..03",
+    "BE-03",
+    "BE-04..05",
+    "BE-06",
+    "BE-07..09",
+)
+
 
 @dataclass
 class Issue:
@@ -125,6 +139,7 @@ class Ctx:
         self.api_entries: List[dict] = []
         self.api_ids: List[str] = []
         self.pending: set = set()  # 仍是占位未填写的章
+        self.scope_exempt: bool = False  # 窄范围变更，结构性检查组整组豁免
 
 
 # ---------------------------------------------------------------- 解析工具
@@ -271,6 +286,22 @@ def extract_api_entries(ctx: Ctx, report: Report) -> None:
 
     ctx.api_entries = entries
     ctx.api_ids = [e["id"] for e in entries]
+
+
+def detect_scope_exempt(ctx: Ctx) -> bool:
+    """窄范围变更判定：三条同时成立才为真，缺一条就按完整校验走。
+
+    判定只读文档内容（契约章是否存在、有无接口条目、两章有无显式声明），
+    不读命令行参数、环境变量或外部配置；任一声明读不到即判为未豁免，
+    宁可误报也不放过。
+    """
+    if "api" not in ctx.sections or ctx.api_entries:
+        return False
+    if "本次无接口变更" not in section_text(ctx, "api"):
+        return False
+    if "本次无表结构变更" not in section_text(ctx, "backend"):
+        return False
+    return True
 
 
 def find_table(ctx: Ctx, key: str, must_contain: tuple) -> List[dict]:
@@ -649,8 +680,15 @@ def check_frontend_features(ctx: Ctx, r: Report) -> None:
         ("FE-05", "待并入权限矩阵", "新增权限点需标注「待并入权限矩阵」"),
     ]
     for code, kw, msg in RULES:
-        if kw not in text:
-            r.error(code, "前端设计未见「%s」：%s" % (kw, msg))
+        if kw in text:
+            continue
+        if ctx.scope_exempt:
+            # 窄范围变更没有写入交互、降级数据展示与新增权限点，这三项关键词
+            # 检查豁免；紧随其后的五类页面态（FE-06）不在豁免内，照常执行。
+            r.info(code, "窄范围变更可豁免（%s）：未做关键词「%s」检查"
+                   % (SCOPE_EXEMPT_BASIS, kw))
+            continue
+        r.error(code, "前端设计未见「%s」：%s" % (kw, msg))
 
     absent_states = [kw for kw in ("加载", "空", "无权限", "失败", "降级") if kw not in text]
     if absent_states:
@@ -1097,7 +1135,12 @@ def print_list_checks() -> None:
     print("[变更三章 design.md]")
     for code, desc, _fn, guard in CHECKS:
         dep = ("依赖：" + "/".join(CHAPTER_LABEL[g] for g in guard)) if guard else ""
-        print("  %-32s %-34s %s" % (code, desc, dep))
+        # 窄范围变更下整组跳过的检查组在这里标注出来；与执行循环共用
+        # SCOPE_EXEMPT_CODES，避免清单与实际行为各写一份。
+        exempt = "  [窄范围变更可豁免]" if code in SCOPE_EXEMPT_CODES else ""
+        print("  %-32s %-34s %s%s" % (code, desc, dep, exempt))
+    print("  注：窄范围变更下 FE-03 / FE-04 / FE-05 关键词检查同样豁免，"
+          "FE-06 五类页面态照常执行")
     print("\n[规范文档]")
     for code, desc in (
         ("NORM-01", "规范文件存在性（optional 缺失为可跳过）"),
@@ -1193,10 +1236,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         ctx = Ctx(design_path, lines, sections, inv_set, dec_set, change_dir)
         extract_api_entries(ctx, report)
 
+        ctx.scope_exempt = detect_scope_exempt(ctx)
+        if ctx.scope_exempt:
+            report.info("SCOPE", "窄范围变更：%s，跳过九项结构性检查" % SCOPE_EXEMPT_BASIS)
+
         skipped: List[str] = []
         for _code, _desc, fn, guard in CHECKS:
             if guard and all(g in ctx.pending for g in guard):
                 skipped.append(_code)
+                continue
+            if ctx.scope_exempt and _code in SCOPE_EXEMPT_CODES:
+                # 跳过必须逐项留痕，不得静默；级别为 INFO，不计入 WARN / ERROR。
+                report.info(_code, "窄范围变更可豁免（%s）：跳过「%s」"
+                            % (SCOPE_EXEMPT_BASIS, _desc))
                 continue
             try:
                 fn(ctx, report)

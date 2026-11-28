@@ -7,7 +7,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,8 +14,8 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * API-020 响应字段逐字对齐契约：条目是 {@code ownerId} 与 {@code ownerName} 两项，
- * {@code dataTimestamp} 只在降级时出现。
+ * API-020 改造后的响应字段逐字对齐契约：条目是 {@code ownerId}、{@code ownerNo}、{@code ownerName} 三项，
+ * 响应不带 {@code dataTimestamp}（读权威库，不伪造降级标识）。
  */
 class OwnerSelectorViewTest {
 
@@ -25,35 +24,32 @@ class OwnerSelectorViewTest {
         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @Test
-    @DisplayName("正常查询：条目只有 ownerId 与 ownerName，响应不带 dataTimestamp")
-    void 正常查询不带数据时间戳() throws Exception {
+    @DisplayName("条目含 ownerNo，且不带 dataTimestamp")
+    void 条目字段() throws Exception {
         OwnerSelectorView.OwnerSelectorPage page = new OwnerSelectorView.OwnerSelectorPage(
-            List.of(new OwnerSelectorView("9", "华东货主")), null, false, null);
+            List.of(new OwnerSelectorView("9", "OW000009", "华东货主")), null, false);
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(page));
 
         Set<String> itemFields = new HashSet<>();
         json.get("items").get(0).fieldNames().forEachRemaining(itemFields::add);
-        assertThat(itemFields).containsExactlyInAnyOrder("ownerId", "ownerName");
-        assertThat(json.get("items").get(0).get("ownerName").asText()).isEqualTo("华东货主");
+        assertThat(itemFields).containsExactlyInAnyOrder("ownerId", "ownerNo", "ownerName");
+        assertThat(json.get("items").get(0).get("ownerNo").asText()).isEqualTo("OW000009");
         assertThat(json.has("displayName")).isFalse();
-        assertThat(json.has("dataTimestamp")).isFalse();
+        assertThat(json.has("dataTimestamp")).as("读权威库，不得出现降级标识").isFalse();
         assertThat(json.get("hasMore").asBoolean()).isFalse();
-        assertThat(json.has("nextCursor")).isTrue();
         assertThat(json.get("nextCursor").isNull()).isTrue();
     }
 
     @Test
-    @DisplayName("降级查询：响应带 dataTimestamp，取降级数据来源时间")
-    void 降级查询带数据时间戳() throws Exception {
-        Instant dataTimestamp = Instant.parse("2026-11-20T08:30:00Z");
+    @DisplayName("翻页游标原样回出不透明字符串")
+    void 翻页游标() throws Exception {
         OwnerSelectorView.OwnerSelectorPage page = new OwnerSelectorView.OwnerSelectorPage(
-            List.of(new OwnerSelectorView("9", "华东货主")), "9", true, dataTimestamp);
+            List.of(new OwnerSelectorView("9", "OW000009", "华东货主")), "cursor-value", true);
 
         JsonNode json = objectMapper.readTree(objectMapper.writeValueAsString(page));
 
-        assertThat(json.get("dataTimestamp").asText()).isEqualTo("2026-11-20T08:30:00Z");
-        assertThat(json.get("nextCursor").asText()).isEqualTo("9");
+        assertThat(json.get("nextCursor").asText()).isEqualTo("cursor-value");
         assertThat(json.get("hasMore").asBoolean()).isTrue();
     }
 }

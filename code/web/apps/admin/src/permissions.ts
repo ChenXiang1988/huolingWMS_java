@@ -25,6 +25,13 @@ export const PERMISSIONS = {
   archiveHubRead: 'archive.hub.read',
   archiveHubCreate: 'archive.hub.create',
   archiveHubReview: 'archive.hub.review',
+  /**
+   * 货主档案两枚权限点，逐字取变更 `add-owner-archive` 的契约 E-20 与
+   * `design.md`「前端设计 · 菜单与权限点」，该处标注「待并入权限矩阵」，同步由主代理完成。
+   * 读点同时用于 API-020 选择器（契约把选择器权限点由 `archive.hub.create` 改为 `owner.hub.read`）。
+   */
+  ownerHubRead: 'owner.hub.read',
+  ownerHubWrite: 'owner.hub.write',
 } as const
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

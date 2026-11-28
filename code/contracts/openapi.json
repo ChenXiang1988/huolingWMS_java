@@ -294,6 +294,16 @@
               }
             }
           },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -314,16 +324,6 @@
               }
             }
           },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
           "409": {
             "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
             "content": {
@@ -333,6 +333,136 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/hub/owner-archives/{ownerNo}": {
+      "get": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "detail_3",
+        "parameters": [
+          {
+            "name": "ownerNo",
+            "in": "path",
+            "description": "货主编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "404": {
+            "description": "NOT_FOUND_OWNER：货主编号或受理号不存在，或存在但不在调用方货主域内（两者同一响应）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "edit_1",
+        "parameters": [
+          {
+            "name": "ownerNo",
+            "in": "path",
+            "description": "货主编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerEditRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "已受理：data 只含 acceptNo、受理时状态快照 status 与 replayed，执行结果由 API-027 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerTicket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：同一幂等键的首次请求仍在处理（可重试），或同键但请求指纹不同（不可重试）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
           }
         }
       }
@@ -722,8 +852,8 @@
           "required": true
         },
         "responses": {
-          "500": {
-            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-017 按受理号查询",
             "content": {
               "*/*": {
                 "schema": {
@@ -732,18 +862,8 @@
               }
             }
           },
-          "400": {
-            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法；缺 Idempotency-Key 也按此拒绝",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/SiteApiResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在本仓可见范围内",
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请，或令牌端标识与仓标识不合法",
             "content": {
               "*/*": {
                 "schema": {
@@ -772,8 +892,18 @@
               }
             }
           },
-          "403": {
-            "description": "FORBIDDEN_SITE：单仓越权发起变更申请，或令牌端标识与仓标识不合法",
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界、请求体含未知字段，或 changeField 不在闭集（name、spec、category、storageCondition）内；缺 Idempotency-Key 也按此拒绝",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在本仓可见范围内",
             "content": {
               "*/*": {
                 "schema": {
@@ -792,8 +922,8 @@
               }
             }
           },
-          "202": {
-            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-017 按受理号查询",
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
               "*/*": {
                 "schema": {
@@ -1001,6 +1131,16 @@
               }
             }
           },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -1013,16 +1153,6 @@
           },
           "202": {
             "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
             "content": {
               "*/*": {
                 "schema": {
@@ -1117,26 +1247,6 @@
               }
             }
           },
-          "500": {
-            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
           "404": {
             "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
             "content": {
@@ -1149,6 +1259,26 @@
           },
           "422": {
             "description": "RULE_DUPLICATE_CODE、RULE_DUPLICATE_BARCODE：货主内编码或条码重复",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
             "content": {
               "*/*": {
                 "schema": {
@@ -1254,6 +1384,16 @@
               }
             }
           },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -1274,16 +1414,6 @@
               }
             }
           },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
           "409": {
             "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体",
             "content": {
@@ -1293,6 +1423,358 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/hub/owner-archives": {
+      "get": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "list_6",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerNo",
+            "in": "query",
+            "description": "货主编号，精确匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerName",
+            "in": "query",
+            "description": "货主名称，模糊匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "creditCode",
+            "in": "query",
+            "description": "统一社会信用代码，精确匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "updatedFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "updatedTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段：ownerNo、ownerName、updateTime，缺省 ownerNo",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "排序方向：asc、desc，缺省 asc",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "create_4",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "已受理：data 只含 acceptNo、受理时状态快照 status 与 replayed，执行结果由 API-027 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerTicket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：同一幂等键的首次请求仍在处理（可重试），或同键但请求指纹不同（不可重试）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
+          }
+        }
+      }
+    },
+    "/api/hub/owner-archives/{ownerNo}/enable": {
+      "post": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "enable",
+        "parameters": [
+          {
+            "name": "ownerNo",
+            "in": "path",
+            "description": "货主编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerReasonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "已受理：data 只含 acceptNo、受理时状态快照 status 与 replayed，执行结果由 API-027 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerTicket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：同一幂等键的首次请求仍在处理（可重试），或同键但请求指纹不同（不可重试）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
+          }
+        }
+      }
+    },
+    "/api/hub/owner-archives/{ownerNo}/disable": {
+      "post": {
+        "tags": [
+          "hub-owner-archive-controller"
+        ],
+        "operationId": "disable_1",
+        "parameters": [
+          {
+            "name": "ownerNo",
+            "in": "path",
+            "description": "货主编号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerReasonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "已受理：data 只含 acceptNo、受理时状态快照 status 与 replayed，执行结果由 API-027 按受理号查询",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerTicket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：同一幂等键的首次请求仍在处理（可重试），或同键但请求指纹不同（不可重试）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
           }
         }
       }
@@ -1324,8 +1806,8 @@
           "required": true
         },
         "responses": {
-          "403": {
-            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含凭证错误、站点未登记与多仓声明",
+          "400": {
+            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
             "content": {
               "*/*": {
                 "schema": {
@@ -1344,8 +1826,8 @@
               }
             }
           },
-          "400": {
-            "description": "PARAM_INVALID：字段缺失、长度越界或枚举非法",
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含凭证错误、站点未登记与多仓声明",
             "content": {
               "*/*": {
                 "schema": {
@@ -1421,8 +1903,8 @@
           }
         },
         "responses": {
-          "403": {
-            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含刷新凭证失效、已使用与端标识不是 SITE",
+          "200": {
+            "description": "续期成功：返回新 accessToken、siteId、permissions 与 expiresIn；新刷新凭证仍以 httpOnly cookie 下发",
             "content": {
               "*/*": {
                 "schema": {
@@ -1451,8 +1933,18 @@
               }
             }
           },
-          "200": {
-            "description": "续期成功：返回新 accessToken、siteId、permissions 与 expiresIn；新刷新凭证仍以 httpOnly cookie 下发",
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN_SITE：单仓越权发起变更申请；含刷新凭证失效、已使用与端标识不是 SITE",
             "content": {
               "*/*": {
                 "schema": {
@@ -1470,16 +1962,6 @@
                 }
               }
             }
-          },
-          "500": {
-            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
           }
         }
       }
@@ -1489,7 +1971,7 @@
         "tags": [
           "hub-archive-controller"
         ],
-        "operationId": "list_6",
+        "operationId": "list_7",
         "parameters": [
           {
             "name": "Authorization",
@@ -1610,7 +2092,7 @@
         "tags": [
           "hub-archive-controller"
         ],
-        "operationId": "create_4",
+        "operationId": "create_5",
         "parameters": [
           {
             "name": "Idempotency-Key",
@@ -1680,6 +2162,16 @@
               }
             }
           },
+          "409": {
+            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -1692,16 +2184,6 @@
           },
           "202": {
             "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：幂等记录处理中或同键异体",
             "content": {
               "*/*": {
                 "schema": {
@@ -1787,6 +2269,16 @@
               }
             }
           },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -1799,16 +2291,6 @@
           },
           "202": {
             "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
             "content": {
               "*/*": {
                 "schema": {
@@ -1865,8 +2347,8 @@
           "required": true
         },
         "responses": {
-          "429": {
-            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内；逐条结论同时写进受理结果摘要",
             "content": {
               "*/*": {
                 "schema": {
@@ -1875,8 +2357,8 @@
               }
             }
           },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内；逐条结论同时写进受理结果摘要",
+          "429": {
+            "description": "RATE_LIMITED：端加货主维度超限，响应体带 retryAfterMs",
             "content": {
               "*/*": {
                 "schema": {
@@ -1905,8 +2387,8 @@
               }
             }
           },
-          "500": {
-            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
+          "409": {
+            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体；逐条结论同时写进受理结果摘要，单条失败不影响其他条目",
             "content": {
               "*/*": {
                 "schema": {
@@ -1915,8 +2397,8 @@
               }
             }
           },
-          "409": {
-            "description": "STATE_INVALID、CONFLICT_VERSION、IDEMPOTENT_IN_PROGRESS、IDEMPOTENT_KEY_CONFLICT：状态迁移不在守卫表内、版本号落后、幂等记录处理中或同键异体；逐条结论同时写进受理结果摘要，单条失败不影响其他条目",
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
               "*/*": {
                 "schema": {
@@ -2012,6 +2494,16 @@
               }
             }
           },
+          "404": {
+            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "INTERNAL_ERROR：未捕获系统异常，带 traceId 报障",
             "content": {
@@ -2024,16 +2516,6 @@
           },
           "202": {
             "description": "已受理：data 只含 acceptNo 与受理时状态快照 status，执行结果由 API-015 至 API-017 按受理号查询",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "NOT_FOUND_ARCHIVE：档案不存在或不在数据域内",
             "content": {
               "*/*": {
                 "schema": {
@@ -2413,18 +2895,36 @@
             }
           },
           {
-            "name": "ownerCode",
+            "name": "ownerNo",
             "in": "query",
-            "description": "货主标识，精确匹配",
+            "description": "货主编号，精确匹配",
             "required": false,
             "schema": {
               "type": "string"
             }
           },
           {
-            "name": "name",
+            "name": "ownerName",
             "in": "query",
-            "description": "货主展示名，模糊匹配",
+            "description": "货主名称，模糊匹配",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段：ownerNo、ownerName，缺省 ownerNo",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortDir",
+            "in": "query",
+            "description": "排序方向：asc、desc，缺省 asc",
             "required": false,
             "schema": {
               "type": "string"
@@ -2455,10 +2955,82 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/ArchiveResponseOwnerSelectorPage"
+                  "$ref": "#/components/schemas/OwnerSelectorResponseOwnerSelectorPage"
                 }
               }
             }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
+          }
+        }
+      }
+    },
+    "/api/hub/owner-archives/acceptances/{acceptNo}": {
+      "get": {
+        "tags": [
+          "hub-owner-acceptance-controller"
+        ],
+        "operationId": "detail_4",
+        "parameters": [
+          {
+            "name": "acceptNo",
+            "in": "path",
+            "description": "受理号",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnerResponseOwnerAcceptanceView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "PARAM_INVALID：必填缺失、长度或枚举越界、请求体未知字段、limit 与 cursor 越界、Idempotency-Key 缺失或格式非法、传入已删除的 ownerCode 或 name"
+          },
+          "403": {
+            "description": "FORBIDDEN_OWNER：令牌端标识不是 HUB，或货主数据域为指定列表且列表为空，或指定列表域尝试建档"
+          },
+          "404": {
+            "description": "NOT_FOUND_OWNER：货主编号或受理号不存在，或存在但不在调用方货主域内（两者同一响应）"
+          },
+          "429": {
+            "description": "RATE_LIMITED：运营端该接口超过配额，响应带 Retry-After 与 retryAfterMs"
+          },
+          "500": {
+            "description": "INTERNAL_ERROR：未捕获异常，响应带 traceId 供报障"
+          },
+          "503": {
+            "description": "DEPENDENCY_UNAVAILABLE：权限、数据域或受理存储不可用，可重试"
           }
         }
       }
@@ -2468,7 +3040,7 @@
         "tags": [
           "hub-change-request-controller"
         ],
-        "operationId": "list_7",
+        "operationId": "list_8",
         "parameters": [
           {
             "name": "Authorization",
@@ -2579,7 +3151,7 @@
         "tags": [
           "hub-acceptance-controller"
         ],
-        "operationId": "detail_3",
+        "operationId": "detail_5",
         "parameters": [
           {
             "name": "acceptNo",
@@ -2959,6 +3531,99 @@
           "dataTimestamp": {
             "type": "string",
             "format": "date-time"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Detail"
+            }
+          }
+        }
+      },
+      "Detail": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "OwnerEditRequest": {
+        "type": "object",
+        "properties": {
+          "ownerName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "creditCode": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Issue": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "OwnerResponseOwnerTicket": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OwnerTicket"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          }
+        }
+      },
+      "OwnerTicket": {
+        "type": "object",
+        "properties": {
+          "acceptNo": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
           }
         }
       },
@@ -3073,19 +3738,46 @@
         }
       },
       "CreateRequest": {
+        "required": [
+          "accountName",
+          "initialPassword"
+        ],
         "type": "object",
         "properties": {
-          "archiveId": {
+          "accountName": {
             "type": "string"
           },
-          "changeField": {
+          "employeeId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "员工内部主键，十进制字符串；client=HUB 时必填，货主端账号不绑员工；传 JSON 数字返回 COMMON_9001",
+            "nullable": true
+          },
+          "client": {
+            "type": "string",
+            "description": "端标识：HUB 或 OWNER，必填（契约 1.7）",
+            "enum": [
+              "HUB",
+              "OWNER"
+            ]
+          },
+          "ownerId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "归属货主，十进制字符串；client=OWNER 时必填，client=HUB 时不得出现",
+            "nullable": true
+          },
+          "initialPassword": {
             "type": "string"
           },
-          "targetValue": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
+          "roleIds": {
+            "minItems": 0,
+            "type": "array",
+            "items": {
+              "pattern": "^[1-9][0-9]*$",
+              "type": "string",
+              "description": "角色主键，十进制字符串"
+            }
           }
         }
       },
@@ -3099,6 +3791,35 @@
         }
       },
       "DisableRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "OwnerCreateRequest": {
+        "type": "object",
+        "properties": {
+          "ownerName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "creditCode": {
+            "type": "string"
+          }
+        }
+      },
+      "OwnerReasonRequest": {
         "type": "object",
         "properties": {
           "reason": {
@@ -3125,7 +3846,12 @@
         "type": "object",
         "properties": {
           "action": {
-            "type": "string"
+            "type": "string",
+            "description": "审核动作：APPROVE 通过、REJECT 驳回；闭集外返回 PARAM_INVALID",
+            "enum": [
+              "APPROVE",
+              "REJECT"
+            ]
           },
           "reviewReason": {
             "type": "string"
@@ -3142,7 +3868,13 @@
             }
           },
           "action": {
-            "type": "string"
+            "type": "string",
+            "description": "批量动作：APPROVE 通过、REJECT 驳回、DISABLE 停用；闭集外返回 PARAM_INVALID",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "DISABLE"
+            ]
           },
           "reason": {
             "type": "string"
@@ -3180,6 +3912,12 @@
           },
           "resetPassword": {
             "type": "string"
+          },
+          "ownerId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "归属货主，十进制字符串；已绑定的账号传不同值即拒绝",
+            "nullable": true
           },
           "version": {
             "type": "integer",
@@ -3534,6 +4272,30 @@
             "description": "员工内部主键，十进制字符串；货主端账号不绑员工，为 null",
             "nullable": true
           },
+          "client": {
+            "type": "string",
+            "description": "端标识：运营端 HUB、货主端 OWNER（契约 1.7）",
+            "enum": [
+              "HUB",
+              "OWNER"
+            ]
+          },
+          "ownerId": {
+            "pattern": "^[1-9][0-9]*$",
+            "type": "string",
+            "description": "归属货主，十进制字符串；非货主端账号为 null",
+            "nullable": true
+          },
+          "ownerNo": {
+            "type": "string",
+            "description": "归属货主编号；非货主端账号或档案缺失为 null",
+            "nullable": true
+          },
+          "ownerName": {
+            "type": "string",
+            "description": "归属货主名称；非货主端账号或档案缺失为 null",
+            "nullable": true
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -3689,6 +4451,12 @@
           "dataTimestamp": {
             "type": "string",
             "format": "date-time"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Detail"
+            }
           }
         }
       },
@@ -3722,6 +4490,9 @@
           "archiveId": {
             "type": "string"
           },
+          "ownerId": {
+            "type": "string"
+          },
           "siteId": {
             "type": "string"
           },
@@ -3743,9 +4514,6 @@
           "archiveVersion": {
             "type": "integer",
             "format": "int64"
-          },
-          "uploadStatus": {
-            "type": "string"
           },
           "createdAt": {
             "type": "string",
@@ -3803,6 +4571,12 @@
           "dataTimestamp": {
             "type": "string",
             "format": "date-time"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Detail"
+            }
           }
         }
       },
@@ -3881,6 +4655,12 @@
           "dataTimestamp": {
             "type": "string",
             "format": "date-time"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Detail"
+            }
           }
         }
       },
@@ -3911,7 +4691,24 @@
           }
         }
       },
-      "ArchiveResponseOwnerSelectorPage": {
+      "OwnerSelectorPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnerSelectorView"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OwnerSelectorResponseOwnerSelectorPage": {
         "type": "object",
         "properties": {
           "code": {
@@ -3933,30 +4730,11 @@
             "type": "integer",
             "format": "int64"
           },
-          "dataTimestamp": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "OwnerSelectorPage": {
-        "type": "object",
-        "properties": {
-          "items": {
+          "details": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/OwnerSelectorView"
+              "$ref": "#/components/schemas/Detail"
             }
-          },
-          "nextCursor": {
-            "type": "string"
-          },
-          "hasMore": {
-            "type": "boolean"
-          },
-          "dataTimestamp": {
-            "type": "string",
-            "format": "date-time"
           }
         }
       },
@@ -3966,8 +4744,251 @@
           "ownerId": {
             "type": "string"
           },
+          "ownerNo": {
+            "type": "string"
+          },
           "ownerName": {
             "type": "string"
+          }
+        }
+      },
+      "OwnerItem": {
+        "type": "object",
+        "properties": {
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerNo": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "creditCode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DISABLED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OwnerPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnerItem"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OwnerResponseOwnerPage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OwnerPage"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          }
+        }
+      },
+      "OwnerDetail": {
+        "type": "object",
+        "properties": {
+          "ownerId": {
+            "type": "string"
+          },
+          "ownerNo": {
+            "type": "string"
+          },
+          "ownerName": {
+            "type": "string"
+          },
+          "contactName": {
+            "type": "string"
+          },
+          "contactPhone": {
+            "type": "string"
+          },
+          "creditCode": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "DISABLED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updateTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "lastStatusChange": {
+            "$ref": "#/components/schemas/OwnerStatusChangeView"
+          }
+        }
+      },
+      "OwnerResponseOwnerDetail": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OwnerDetail"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
+          }
+        }
+      },
+      "OwnerStatusChangeView": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "CREATE",
+              "DISABLE",
+              "ENABLE"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "OwnerAcceptanceView": {
+        "type": "object",
+        "properties": {
+          "acceptStatus": {
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/components/schemas/JsonNode"
+          },
+          "errorCode": {
+            "type": "string"
+          },
+          "errorMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "OwnerResponseOwnerAcceptanceView": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OwnerAcceptanceView"
+          },
+          "traceId": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "retryAfterMs": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Issue"
+            }
           }
         }
       },

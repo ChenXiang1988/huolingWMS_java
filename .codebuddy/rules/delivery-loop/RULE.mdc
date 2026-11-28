@@ -18,7 +18,7 @@ enabled: true
 |---|---|---|
 | 无需出规格 | 不改接口契约、表结构、状态机、代码与设计文档结论 | 直接做，不留变更目录 |
 | 并入已有变更 | 已有未归档变更覆盖同一主题，且不改变其验收口径 | 追加任务到该变更，不新建 |
-| 修改已有规格 | 只校正当前版文档的结论，不产生代码改动 | 按 `版本规则.md` 走升级，归档版只读 |
+| 修改已有规格 | 只校正当前版文档的结论，不产生代码改动 | 按版本规则走升级，归档版只读 |
 | 新建变更 | 需要改代码，或改变对外行为 | 建变更目录，出四类产物 |
 | 需澄清 | 资料不足以在以上四种里选一个 | 只问最少必要问题，问完重判 |
 
@@ -26,15 +26,9 @@ enabled: true
 
 ## 二、四类产物与校验（LOOP-02）
 
-提案、增量规格、设计、任务清单四类齐全。设计按 `openspec/config.yaml` 写三章；规范文档引用 `<当前版>` 路径，不写具体版本号。
+提案、增量规格、设计、任务清单四类齐全；产物清单、文件位置与三章结构见 `.codebuddy/references/项目速查.md`。规范文档引用 `<当前版>` 路径，不写具体版本号。
 
-收口前必须跑：
-
-```bash
-python3 .codebuddy/tools/check-design.py
-```
-
-`ERROR` 必须为 0。`WARN` 要么改掉，要么在收口说明里逐条写理由。不得改脚本、删检查项、调正则让结果变绿。
+收口前必须跑 `python3 .codebuddy/tools/check-design.py`，ERROR 必须为 0。WARN 要么改掉，要么在收口说明里逐条写理由。不得改脚本、删检查项、调正则让结果变绿。校验用法与格式契约见 `.codebuddy/references/校验指南.md`。
 
 ## 三、确认门（LOOP-03）
 
@@ -47,19 +41,13 @@ python3 .codebuddy/tools/check-design.py
 
 ## 四、实施与门禁（LOOP-04）
 
-实施阶段只跑定向验证：
+实施阶段只跑定向验证：后端按改动模块跑定向测试，Web 改动页面手工走通加类型检查，安卓改动页面装机走通加对应模块编译。具体命令见 `.codebuddy/references/项目速查.md`。
 
-| 端 | 定向验证 |
-|---|---|
-| 后端 | `mvn -f code/backend/pom.xml -pl <改动模块> -am test` |
-| Web | 改动页面手工走通 + `pnpm typecheck` |
-| 安卓 | 改动页面装机走通 + 对应模块编译 |
-
-前端没有测试脚本，根 `package.json` 只有 `dev`／`build`／`typecheck`，**不要把 `pnpm test` 写进任务清单**；规格校验也不叫 `pnpm spec:validate`。
+前端没有测试脚本，根 `package.json` 只有 `dev`／`build`／`typecheck`，不要把 `pnpm test` 写进任务清单；规格校验也不叫 `pnpm spec:validate`。
 
 进基线前统一跑全量门禁，全绿才算过：
 
-1. `mvn -f code/backend/pom.xml clean verify`（需 JDK 21，本机显式设 `JAVA_HOME`；集成测试连真库，先 `cd code/deploy/local && docker compose up -d`，库没起会红是预期）
+1. `mvn -f code/backend/pom.xml clean verify`（需 JDK 21，本机显式设 `JAVA_HOME`）
 2. `pnpm typecheck && pnpm build`
 3. `python3 .codebuddy/tools/check-design.py`
 4. 改了代理定义或分派规则时加跑 `check-agent-dispatch.py`；改了仓型判定落点时加跑 `code/backend/scripts/check-warehouse-type.sh`
@@ -86,11 +74,12 @@ python3 .codebuddy/tools/check-design.py
 
 ## 七、与其它规则的关系
 
-| 规则来源 | 管什么 |
+| 资料来源 | 管什么 |
 |---|---|
 | 本文件 | 一次需求的阶段顺序与四道门禁 |
 | `.codebuddy/rules/agent-delegation/RULE.mdc` | 谁能写代码、派发怎么带权限与白名单 |
-| `.codebuddy/rules/design-check/RULE.mdc` | 校验脚本的执行时机、格式契约、结果处置 |
 | `.codebuddy/rules/version-policy/RULE.mdc` | 当前版指针、归档版只读、过渡期回查 |
-| `.codebuddy/rules/doc-writing/RULE.mdc` | 设计文档的写作结构 |
+| `.codebuddy/references/项目速查.md` | 文档存储位置、四类产物、分派对应、常用命令 |
+| `.codebuddy/references/校验指南.md` | 校验脚本的执行时机、格式契约、结果处置 |
+| `.codebuddy/references/写作规范.md` | 设计文档的写作结构 |
 | `openspec/config.yaml` | 一次变更要交付哪些产物、设计三章结构 |

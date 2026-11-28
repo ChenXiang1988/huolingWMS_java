@@ -67,7 +67,7 @@ tools: Read, Write, Edit, Glob, Grep
 2. `humandesign/sysdesign/<当前版>/01-技术栈选型.md` —— Vue 3 + TypeScript + Vite + Element Plus 基线，不引入其他 UI 框架
 3. `humandesign/sysdesign/<当前版>/05-角色与权限矩阵.md` —— 三端角色、能做什么、数据域，交互步骤必须与角色职责对得上
 4. `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` 与 `12a-网页页面与分端规格.md` —— 常驻规范：前者管共享底座，后者管页面骨架与分端规格；**不存在时先按本文第「规范文档骨架」建立，再继续**
-5. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
+5. `.codebuddy/references/写作规范.md` —— 写作规范，按需查阅
 6. 派发到具体变更时：`proposal.md`、`specs/**/spec.md`、`design.md` 的「前端设计」章、`tasks.md`
 
 # 既有基线（不得推翻，只可补充）
@@ -146,7 +146,7 @@ tools: Read, Write, Edit, Glob, Grep
 
 # 规范文档骨架
 
-严格按 `doc-writing.md` 的四段结构，二级标题用判断句：
+严格按 `.codebuddy/references/写作规范.md` 的四段结构，二级标题用判断句：
 
 ## 结论
 

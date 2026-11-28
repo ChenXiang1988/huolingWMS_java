@@ -11,6 +11,8 @@ import {
   FormField,
   FormInput,
   FormSection,
+  OwnerSelect,
+  PageHeader,
   StatusTag,
   formatListTime,
   parseUtcIso,
@@ -31,12 +33,16 @@ import {
   type ArchiveSortBy,
   type ArchiveStatus,
   type HubCreateBody,
-  type OwnerOption,
   type SortDir,
 } from '@wms/request'
 import { PERMISSIONS } from '../permissions'
 import { useAuthStore } from '../stores/auth'
-import { buildArchiveSections, toAcceptancePoll, useHubArchiveApi, useHubOwnerApi } from '../api/archive'
+import {
+  buildArchiveSections,
+  toAcceptancePoll,
+  useHubArchiveApi,
+  useOwnerOptionLoader,
+} from '../api/archive'
 import { useListQuery } from '../composables/useListQuery'
 
 /**
@@ -47,7 +53,8 @@ import { useListQuery } from '../composables/useListQuery'
  */
 const auth = useAuthStore()
 const api = useHubArchiveApi()
-const ownerApi = useHubOwnerApi()
+/** API-020：共享货主选择器的数据源（参数已按契约改造为 `ownerNo`／`ownerName`）。 */
+const loadOwners = useOwnerOptionLoader()
 /** API-016：受理结果查询（`AcceptPanel` 按 `UI-F02` 轮询，超时保留受理号）。 */
 const pollAcceptance = toAcceptancePoll(api)
 
@@ -104,36 +111,6 @@ const canCreate = computed(() => auth.hasPermission(PERMISSIONS.archiveHubCreate
 const detailSections = computed(() => (detailRow.value ? buildArchiveSections(detailRow.value) : []))
 /** UI-S07：同页多个降级数据源只显示一条，提示条取最早的数据时间。 */
 const degradeSources = computed(() => [dataTimestamp.value, acceptTimestamp.value])
-
-/** API-020 货主选择器：候选列表、搜索中与搜索失败三种状态（`UI-S02` 空态、`UI-S04` 失败重试）。 */
-const ownerOptions = ref<OwnerOption[]>([])
-const ownerLoading = ref(false)
-const ownerError = ref('')
-
-/**
- * 搜索货主：契约的查询参数只有编码 `ownerCode` 与名称 `name`（API-020「查询参数含编码、名称与
- * 键集分页游标」），`ownerName` 仅作响应展示字段，不下发为查询参数。
- * 服务端把两个条件当「同时满足」，故一次只填一个：纯数字按编码查，其余按名称查；
- * 关键词为空时取第一页供直接浏览（`UI-S02` 空态另由下拉的空态承担）。
- */
-async function searchOwners(keyword: string) {
-  const value = keyword.trim()
-  const byCode = /^[0-9]+$/.test(value)
-  ownerLoading.value = true
-  ownerError.value = ''
-  try {
-    const data = await ownerApi.search({
-      ownerCode: byCode ? value : '',
-      name: byCode ? '' : value,
-      limit: 20,
-    })
-    ownerOptions.value = data.items
-  } catch (e) {
-    ownerError.value = describeApiError(e)
-  } finally {
-    ownerLoading.value = false
-  }
-}
 
 /** 更新时间范围：控件用界面时间，地址栏与查询串用 UTC 时间戳（契约「时间与金额口径」）。 */
 const updatedRange = computed<[Date, Date] | null>({
@@ -207,9 +184,12 @@ function openCreate() {
   Object.keys(errors).forEach((key) => delete errors[key])
   submitKey.value = ''
   createVisible.value = true
-  // 打开代建即取一页货主供直接选择（UI-S02：搜索无结果时给空态，不是空白下拉）
-  if (ownerOptions.value.length === 0) {
-    void searchOwners('')
+}
+
+/** 选中货主后清掉「必填」提示：归属只校验是否已选，存在性由服务端判定（`UI-I11`）。 */
+function onOwnerSelected() {
+  if (errors.ownerId) {
+    delete errors.ownerId
   }
 }
 
@@ -320,15 +300,14 @@ onMounted(load)
 </script>
 
 <template>
-  <el-card>
-    <template #header>
-      <div class="page-header">
-        <span>商品档案</span>
-        <!-- UI-X06：无功能权限时不渲染入口，不置灰 -->
-        <ActionButton v-if="canCreate" variant="primary" @click="openCreate">新建</ActionButton>
-      </div>
+  <!-- UI-P01：页头给标题与主操作，筛选区、表格与分页同容器 -->
+  <PageHeader title="商品档案">
+    <template #actions>
+      <!-- UI-X06：无功能权限时不渲染入口，不置灰 -->
+      <ActionButton v-if="canCreate" variant="primary" @click="openCreate">新建</ActionButton>
     </template>
-
+  </PageHeader>
+  <el-card>
     <!-- UI-S05、UI-S07：降级数据只出一条提示条，显示最早的数据时间与「刷新取实时」出口 -->
     <DegradedBanner :sources="degradeSources" @refresh="refreshDegraded" />
 
@@ -435,30 +414,16 @@ onMounted(load)
       <el-form label-width="120px">
         <FormSection title="归属与标识">
           <FormField :label="archiveFieldLabels.ownerId" required :error="errors.ownerId">
-            <!-- API-020：归属从服务端给出的货主里选，不再手填标识 -->
-            <el-select
+            <!--
+              API-020：共享货主选择器（`UI-B01`、`UI-B02`），归属从服务端给出的可用货主里选，
+              不再手填标识；查询参数已按契约 **BREAKING** 改造为 `ownerNo`／`ownerName`。
+            -->
+            <OwnerSelect
               v-model="form.ownerId"
-              filterable
-              remote
-              clearable
-              :remote-method="searchOwners"
-              :loading="ownerLoading"
-              placeholder="输入编码或名称搜索货主"
-              style="width: 100%"
-            >
-              <el-option
-                v-for="item in ownerOptions"
-                :key="item.ownerId"
-                :label="`${item.ownerName}（${item.ownerId}）`"
-                :value="item.ownerId"
-              />
-              <template #empty>
-                <div class="owner-empty">
-                  <span>{{ ownerError ? '货主列表加载失败' : '未找到货主' }}</span>
-                  <ActionButton v-if="ownerError" variant="text" @click="searchOwners('')">重试</ActionButton>
-                </div>
-              </template>
-            </el-select>
+              :loader="loadOwners"
+              :disabled="submitting"
+              @select="onOwnerSelected"
+            />
             <p class="field-help">归属创建后不可变更，运营只获得管理视图。</p>
           </FormField>
           <FormField :label="archiveFieldLabels.ownerCode" required :error="errors.ownerCode">
@@ -516,27 +481,12 @@ onMounted(load)
 </template>
 
 <style scoped>
-/* UI-P01：页头左侧标题、右侧主操作 */
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 /* UI-C03：帮助文案在控件下方 4px，辅助色，字号取 UI-T12 最小档 */
 .field-help {
   flex: 0 0 100%;
   margin: 4px 0 0;
   font-size: 12px;
   line-height: 1.5;
-  color: var(--el-text-color-secondary);
-}
-/* UI-S02：货主选择器搜索无结果时的空态，文案与重试出口同一行 */
-.owner-empty {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  font-size: 13px;
   color: var(--el-text-color-secondary);
 }
 /* UI-W10：空态三段，主文案由 el-empty 承担，次文案与出口在此 */

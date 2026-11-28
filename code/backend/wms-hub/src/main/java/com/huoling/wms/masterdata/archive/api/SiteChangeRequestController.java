@@ -1,7 +1,8 @@
 package com.huoling.wms.masterdata.archive.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceCommand;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.application.ChangeRequestService;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
@@ -47,12 +48,12 @@ public class SiteChangeRequestController {
 
     private final ChangeRequestService changeRequestService;
     private final ArchiveAccessGuard guard;
-    private final ArchiveAcceptanceService acceptance;
+    private final AcceptanceService acceptance;
     private final JwtTokenService tokenService;
 
     public SiteChangeRequestController(ChangeRequestService changeRequestService,
                                        ArchiveAccessGuard guard,
-                                       ArchiveAcceptanceService acceptance,
+                                       AcceptanceService acceptance,
                                        JwtTokenService tokenService) {
         this.changeRequestService = changeRequestService;
         this.guard = guard;
@@ -90,7 +91,7 @@ public class SiteChangeRequestController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> create(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> create(
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @RequestBody CreateRequest request) {
@@ -102,9 +103,9 @@ public class SiteChangeRequestController {
         ArchiveEntryChecks.requireText(request.targetValue(), "targetValue",
             ArchiveEntryChecks.TARGET_VALUE_MAX);
         ArchiveEntryChecks.requireText(request.reason(), "reason", ArchiveEntryChecks.REASON_MAX);
-        String scopeKey = ArchiveAcceptanceService.SCOPE_SITE_PREFIX + scope.warehouseId();
+        String scopeKey = AcceptanceService.SCOPE_SITE_PREFIX + scope.warehouseId();
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scopeKey, API_CREATE, idempotencyKey,
+            AcceptanceCommand.of(scopeKey, API_CREATE, idempotencyKey,
                 request.archiveId(), request.toString(), SkuChangeRequestStatus.PENDING.name(),
                 user.accountId()),
             () -> changeRequestService.create(request.archiveId(), scope, field,

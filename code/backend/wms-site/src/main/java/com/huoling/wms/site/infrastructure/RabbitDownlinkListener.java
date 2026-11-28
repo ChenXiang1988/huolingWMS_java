@@ -1,6 +1,6 @@
 package com.huoling.wms.site.infrastructure;
 
-import com.huoling.wms.site.application.SkuSnapshotConsumer;
+import com.huoling.wms.site.domain.DownlinkEventConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 下行事件监听：把队列消息交给 {@link SkuSnapshotConsumer}（tasks 1.10、1.12）。
+ * 下行事件监听：把队列消息交给 {@link DownlinkEventConsumer}（tasks 1.10、1.12）。
  *
  * <p>灰度开关（design「可观测与兼容回滚」）：{@code wms.archive.downlink.enabled} 为假时整个监听
  * 组件不装配，单仓只展示已有缓存与待刷新提示，不会连消息中间件。
@@ -25,9 +25,9 @@ public class RabbitDownlinkListener {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitDownlinkListener.class);
 
-    private final SkuSnapshotConsumer consumer;
+    private final DownlinkEventConsumer consumer;
 
-    public RabbitDownlinkListener(SkuSnapshotConsumer consumer) {
+    public RabbitDownlinkListener(DownlinkEventConsumer consumer) {
         this.consumer = consumer;
     }
 

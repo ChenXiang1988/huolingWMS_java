@@ -30,19 +30,22 @@ function back() {
 </script>
 
 <template>
-  <el-result icon="warning" title="无权访问">
-    <template #sub-title>
-      <p class="forbidden-line">
-        当前账号缺少权限点：
-        <code class="forbidden-code">{{ missingPermission || '该页面所需权限点' }}</code>
-      </p>
-      <p class="forbidden-line">如需开通，请联系{{ PERMISSION_CONTACT_ROLE }}分配对应角色。</p>
-    </template>
-    <template #extra>
-      <ActionButton variant="primary" @click="backToWorkbench">返回工作台</ActionButton>
-      <ActionButton variant="secondary" @click="back">返回上一页</ActionButton>
-    </template>
-  </el-result>
+  <!-- 外层统一为容器级底（UI-T20），文案与跳转保持不变 -->
+  <el-card>
+    <el-result icon="warning" title="无权访问">
+      <template #sub-title>
+        <p class="forbidden-line">
+          当前账号缺少权限点：
+          <code class="forbidden-code">{{ missingPermission || '该页面所需权限点' }}</code>
+        </p>
+        <p class="forbidden-line">如需开通，请联系{{ PERMISSION_CONTACT_ROLE }}分配对应角色。</p>
+      </template>
+      <template #extra>
+        <ActionButton variant="primary" @click="backToWorkbench">返回工作台</ActionButton>
+        <ActionButton variant="secondary" @click="back">返回上一页</ActionButton>
+      </template>
+    </el-result>
+  </el-card>
 </template>
 
 <style scoped>

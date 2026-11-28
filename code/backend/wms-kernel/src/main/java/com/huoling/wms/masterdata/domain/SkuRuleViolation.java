@@ -4,7 +4,7 @@ package com.huoling.wms.masterdata.domain;
  * 商品档案规则被违反。只带规则码与说明，不带 HTTP 语义；
  * 接口层按契约错误码表把规则码映射成 HTTP 状态与 {@code retryable}。
  */
-public class SkuRuleViolation extends RuntimeException {
+public class SkuRuleViolation extends RuleViolation {
 
     private final String code;
 
@@ -13,6 +13,7 @@ public class SkuRuleViolation extends RuntimeException {
         this.code = code;
     }
 
+    @Override
     public String code() {
         return code;
     }

@@ -27,6 +27,24 @@ export function useHubOwnerApi() {
 }
 
 /**
+ * 共享货主选择器（`OwnerSelect`）的数据源：把 API-020 绑到当前会话。
+ *
+ * 选择器在 `@wms/design`，不依赖请求层，故检索函数由页面注入；本函数是运营端唯一的注入点，
+ * 代建页与账号页共用一个实现。参数已按契约 **BREAKING** 改造为 `ownerNo`／`ownerName`，
+ * 旧参数 `ownerCode`／`name` 传即 `PARAM_INVALID`，此处不再保留转发（`OA-07`）。
+ */
+export function useOwnerOptionLoader() {
+  const api = useHubOwnerApi()
+  return (query: { ownerNo?: string; ownerName?: string; cursor?: string | null; limit?: number }) =>
+    api.search({
+      ownerNo: query.ownerNo ?? '',
+      ownerName: query.ownerName ?? '',
+      cursor: query.cursor ?? null,
+      limit: query.limit,
+    })
+}
+
+/**
  * API-016 受理结果查询转成 `AcceptPanel` 的入参形状：受理状态、失败错误码、`result` 摘要
  * 与降级数据时间 `dataTimestamp`（`UI-S05`）。字段名逐字取契约，只在 `acceptStatus` 处改名；
  * 批量逐条结果在 `result.items`，由审核页按 `UI-I08` 展开。

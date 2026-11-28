@@ -78,7 +78,8 @@ public class AuthController {
     public ApiResponse<AccountProfileView> me(
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         CurrentUser current = CurrentUser.from(tokenService, authorization);
-        AuthService.AccountProfile profile = authService.profile(current.accountId());
+        // 角色与权限点按令牌端解析：货主端令牌只看到货主端的角色，不跨端合并（05）。
+        AuthService.AccountProfile profile = authService.profile(current.accountId(), current.client());
         return ApiResponse.ok(new AccountProfileView(Identifiers.toWire(profile.id()),
             profile.accountName(), profile.roles(), profile.permissions(),
             DataScopeView.from(profile.dataScope())), traceId());

@@ -6,16 +6,27 @@
  * HTTP 401 即使错误体缺码也归一到该码；有续期入口的端先续期重放，否则调用 `onUnauthorized`
  * 让所属端给出续期或重新登录出口（契约「AUTH_1002 续期后重试，失败跳登录」）。
  *
- * 商品档案、变更申请与受理查询的接口声明在同目录 `archive.ts`，单仓端会话（API-018、API-019）
- * 在 `session.ts`，幂等键生成在 `keys.ts`，字符串错误码文案在 `errors.ts`；
- * 四者都从这里统一导出，应用只引 `@wms/request`。
+ * 商品档案、变更申请与受理查询的接口声明在同目录 `archive.ts`，货主档案（API-021 至 API-027）
+ * 在 `owner-archive.ts`，单仓端会话（API-018、API-019）在 `session.ts`，幂等键生成在 `keys.ts`，
+ * 字符串错误码文案在 `errors.ts`；五者都从这里统一导出，应用只引 `@wms/request`。
  */
 import { archiveErrorHints } from './errors'
 
 export { archiveErrorHints } from './errors'
 export { newIdempotencyKey } from './keys'
 export * from './archive'
+export * from './owner-archive'
 export * from './session'
+
+/**
+ * 错误明细条目，见契约「错误响应结构」：`details` 为元素 `{field, reason}` 的数组。
+ * 货主档案契约（1.1）为本变更补齐该数组，页面的字段级错误按 `details[].field` 就地定位，
+ * 不再靠解析 `message` 猜字段。
+ */
+export interface ApiErrorDetail {
+  field: string
+  reason: string
+}
 
 export interface ApiResponse<T> {
   /**
@@ -30,6 +41,10 @@ export interface ApiResponse<T> {
   data: T
   traceId: string
   retryable: boolean
+  /** 按需出现的字段级错误明细，取契约「错误响应结构」的 `details`。 */
+  details?: ApiErrorDetail[]
+  /** 按需出现的退避毫秒数，取契约「错误响应结构」的 `retryAfterMs`。 */
+  retryAfterMs?: number
 }
 
 /**
@@ -47,6 +62,10 @@ export class ApiError extends Error {
     message: string,
     public readonly retryable: boolean,
     public readonly traceId?: string,
+    /** 字段级错误明细，取契约 `details`；`PARAM_INVALID` 的就地定位依赖它（`OA-10`）。 */
+    public readonly details: ApiErrorDetail[] = [],
+    /** 退避毫秒数，取契约 `retryAfterMs`；`RATE_LIMITED`、`IDEMPOTENT_IN_PROGRESS` 用它排重试。 */
+    public readonly retryAfterMs?: number,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -161,6 +180,8 @@ export function createHttp(options: HttpOptions) {
         payload.message || '请求失败，请稍后重试',
         payload.retryable,
         payload.traceId,
+        payload.details ?? [],
+        payload.retryAfterMs,
       )
     }
     return payload.data
@@ -239,12 +260,34 @@ const errorHints: Record<number, string> = {
   9005: '本次提交与上次不同，请刷新后重提',
 }
 
+/**
+ * 单个错误码到提示文案的映射，只此一份：`describeApiError` 与受理条的失败分派共用。
+ * 数字码（含以字符串下发的数字码）走 `errorHints`，字符串符号码走 `archiveErrorHints`；
+ * 两表都未登记的返回空串，由调用方回落到服务端 `message`，不在此自造文案（`UI-W07`）。
+ */
+export function describeErrorCode(code: number | string | null | undefined): string {
+  if (code === null || code === undefined || code === '') {
+    return ''
+  }
+  if (typeof code === 'number') {
+    return errorHints[code] ?? ''
+  }
+  const symbol = archiveErrorHints[code]
+  if (symbol) {
+    return symbol
+  }
+  /*
+   * 身份与权限接口的受理结果存的是符号码（如 `ACCOUNT_3001`），同步响应下发的是数字段，
+   * 两者按模块规则「取最后一个下划线后的数字」互相折算，故这里也按同一规则回落一次。
+   */
+  const suffix = code.slice(code.lastIndexOf('_') + 1)
+  const numeric = Number(suffix)
+  return Number.isInteger(numeric) ? (errorHints[numeric] ?? '') : ''
+}
+
 export function describeApiError(error: unknown): string {
   if (error instanceof ApiError) {
-    const hint =
-      typeof error.code === 'number'
-        ? (errorHints[error.code] ?? error.message)
-        : (archiveErrorHints[error.code] ?? error.message)
+    const hint = describeErrorCode(error.code) || error.message
     return error.traceId ? `${hint}（${error.traceId}）` : hint
   }
   return '请求失败，请稍后重试'

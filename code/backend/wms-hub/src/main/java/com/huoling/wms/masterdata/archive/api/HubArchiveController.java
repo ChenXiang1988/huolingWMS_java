@@ -2,7 +2,8 @@ package com.huoling.wms.masterdata.archive.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceCommand;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveCommandService;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveQueryService;
@@ -54,20 +55,20 @@ public class HubArchiveController {
     private static final String API_QUERY = "API-007";
     private static final String API_REVIEW = "API-008";
     private static final String API_BATCH = "API-009";
-    private static final String HUB_SCOPE = ArchiveAcceptanceService.SCOPE_HUB;
+    private static final String HUB_SCOPE = AcceptanceService.SCOPE_HUB;
 
     private final SkuArchiveCommandService commandService;
     private final SkuArchiveQueryService queryService;
     private final SkuReviewService reviewService;
     private final ArchiveAccessGuard guard;
-    private final ArchiveAcceptanceService acceptance;
+    private final AcceptanceService acceptance;
     private final JwtTokenService tokenService;
 
     public HubArchiveController(SkuArchiveCommandService commandService,
                                 SkuArchiveQueryService queryService,
                                 SkuReviewService reviewService,
                                 ArchiveAccessGuard guard,
-                                ArchiveAcceptanceService acceptance,
+                                AcceptanceService acceptance,
                                 JwtTokenService tokenService) {
         this.commandService = commandService;
         this.queryService = queryService;
@@ -103,7 +104,7 @@ public class HubArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> create(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> create(
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @RequestBody CreateRequest request) {
@@ -117,7 +118,7 @@ public class HubArchiveController {
         request.toFields().requireComplete();
         String scope = String.valueOf(ownerId);
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scope, API_CREATE, idempotencyKey, "create",
+            AcceptanceCommand.of(scope, API_CREATE, idempotencyKey, "create",
                 request.toString(), SkuArchiveStatus.DRAFT.name(), user.accountId()),
             () -> commandService.createDraftByHub(ownerId, request.toFields(), user.accountId())));
     }
@@ -175,7 +176,7 @@ public class HubArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> review(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> review(
             @Parameter(description = "档案编号", schema = @Schema(type = "string")) @PathVariable String id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
@@ -186,7 +187,7 @@ public class HubArchiveController {
         SkuArchiveAction action = ReviewActions.parseArchiveAction(request.action());
         ArchiveEntryChecks.requireReviewReason(action, request.reviewReason());
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(HUB_SCOPE, API_REVIEW, idempotencyKey, id,
+            AcceptanceCommand.of(HUB_SCOPE, API_REVIEW, idempotencyKey, id,
                 request.toString(), SkuArchiveStatus.PENDING.name(), user.accountId()),
             () -> reviewService.review(id, action, request.reviewReason(), user.accountId())));
     }
@@ -217,7 +218,7 @@ public class HubArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> batch(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> batch(
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @RequestBody BatchRequest request) {
@@ -227,7 +228,7 @@ public class HubArchiveController {
         List<String> archiveIds = ArchiveEntryChecks.requireBatchIds(request.archiveIds());
         ArchiveEntryChecks.requireBatchReason(action, request.reason());
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(HUB_SCOPE, API_BATCH, idempotencyKey, HUB_SCOPE,
+            AcceptanceCommand.of(HUB_SCOPE, API_BATCH, idempotencyKey, HUB_SCOPE,
                 request.toString(), snapshotOf(action), user.accountId()),
             () -> reviewService.batch(archiveIds, action, request.reason(), user.accountId())));
     }

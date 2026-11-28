@@ -43,6 +43,21 @@ mybatis-plus:
       logic-delete-field: none
 
 wms:
+  owner:
+    acceptance:
+      # 受理结果查询的轮询上限（契约 1.3「恢复」、12a 的 UI-F02）：超过仍在处理中即返回可重试的 503，
+      # 调用方保留受理号；后台补偿扫描在 300 秒后把陈旧受理单收尾成 FAILED。
+      processing-timeout-seconds: ${WMS_OWNER_ACCEPTANCE_TIMEOUT_SECONDS:60}
+    metrics:
+      # 受理积压指标的刷新间隔（tasks 1.18）。
+      backlog-interval-ms: ${WMS_OWNER_METRICS_INTERVAL_MS:60000}
+    outbox:
+      # 货主状态下行的路由键（tasks 1.13）：投递器按 event_type 的 OWNER 前缀选它。
+      routing-key: ${WMS_OWNER_ROUTING_KEY:wms.owner.status}
+      # 重试耗尽后的死信队列，供按 eventId 重放；队列本身由部署配置声明，代码不声明拓扑。
+      dead-letter-queue: ${WMS_OWNER_DEAD_LETTER_QUEUE:wms.owner.status.dlq}
+      # 死信阈值：失败次数达到它即转发死信并告警（缺省 5 次，按指数退避约 30 分钟）。
+      dead-letter-threshold: ${WMS_OWNER_DEAD_LETTER_THRESHOLD:5}
   jwt:
     # 本地开发默认值；线上由云上密钥服务注入，仓库不存真实密钥。
     secret: ${WMS_JWT_SECRET:local-dev-only-secret-key-please-change-32bytes}
@@ -72,7 +87,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # metrics 对外暴露：tasks 1.18 要求「指标可在本地端点观察」（/actuator/metrics/{name}）。
+        include: health,info,metrics
   endpoint:
     health:
       probes:

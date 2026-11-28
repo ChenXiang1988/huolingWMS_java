@@ -1,8 +1,8 @@
 package com.huoling.wms.masterdata.archive.infrastructure;
 
 import com.huoling.wms.hub.HubApplication;
-import com.huoling.wms.masterdata.archive.domain.ArchiveIdempotencyRepository;
-import com.huoling.wms.masterdata.archive.domain.IdempotencyRecord;
+import com.huoling.wms.masterdata.acceptance.domain.IdempotencyRecord;
+import com.huoling.wms.masterdata.acceptance.domain.IdempotencyRepository;
 import com.huoling.wms.masterdata.archive.support.ArchiveDbTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ class ArchiveIdempotencyRaceIT extends ArchiveDbTestSupport {
     private static final String API = "API-001";
 
     @Autowired
-    private ArchiveIdempotencyRepository idempotencyRepository;
+    private IdempotencyRepository idempotencyRepository;
 
     @Autowired
     private PlatformTransactionManager transactionManager;

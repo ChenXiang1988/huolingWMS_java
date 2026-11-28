@@ -4,46 +4,86 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
- * 货主选择器查询（API-020）。
+ * 货主选择器查询（API-020），数据源是权威主数据 {@code wms_owner}（tasks 1.12）。
  *
- * <p>只读投影：按归属货主分组取货主标识与展示名（列别名即契约响应字段 {@code ownerName}），
- * 键集分页锚在 {@code owner_id}。
+ * <p>四条口径落在 SQL 上，业务层不再各判一遍：
+ * <ul>
+ *   <li>只返回可用货主：条件固定 {@code status = 'ACTIVE'}，停用档不出现；</li>
+ *   <li>不再从账号派生：不查 {@code wms_account}，断掉账号数据仍能查到货主；</li>
+ *   <li>检索：{@code owner_no} 精确、{@code owner_name} 模糊（{@code %keyword%} 走 pg_trgm 索引）；</li>
+ *   <li>数据域：域为「全部」不加条件，域为「指定列表」加 {@code id in (...)}，空列表一条都不返回，
+ *       绝不回落成全量（INV-06、OI-08）。</li>
+ * </ul>
  *
- * <p>筛选口径照抄契约 API-020 请求行：{@code ownerCode} 按货主标识精确匹配（等值，不做前后缀），
- * {@code name} 按展示名模糊匹配（{@code like}，作用在与响应同源的 {@code min(account_name)} 上，
- * 因此不会出现「筛选命中但展示名不含关键字」的行）；两个条件同时给出时在同一查询里取交集。
- *
- * <p>货主档案表落地前，货主集合从货主端账号派生（已登记为契约缺口），
- * 因此这里不写 {@code is_internal} 一类内部标记——所有货主同构（D01、D03）。
+ * <p>键集分页用行值比较 {@code (排序键, owner_no) > (?, ?)}（降序用 {@code <}），
+ * 与 {@code order by 排序键, owner_no} 完全同序：同值行不重复也不漏，
+ * 且能用上 {@code idx_wms_owner_sort_name} 与 {@code uk_wms_owner_no}。
  */
 @Mapper
 public interface OwnerDirectoryMapper {
 
     @Select("""
         <script>
-        select a.owner_id as ownerId, min(a.account_name) as ownerName
-          from wms_account a
-         where a.owner_id is not null
-           and a.status = 'ENABLED'
-        <if test="ownerCode != null and ownerCode != ''">
-           and cast(a.owner_id as varchar) = #{ownerCode}
+        select o.id         as ownerId,
+               o.owner_no   as ownerNo,
+               o.owner_name as ownerName
+          from wms_owner o
+         where o.status = 'ACTIVE'
+        <if test="ownerNo != null and ownerNo != ''">
+           and o.owner_no = #{ownerNo}
         </if>
-        <if test="cursorId != null">
-           and a.owner_id &gt; #{cursorId}
+        <if test="ownerName != null and ownerName != ''">
+           and o.owner_name like '%' || #{ownerName} || '%'
         </if>
-         group by a.owner_id
-        <if test="name != null and name != ''">
-        having min(a.account_name) like '%' || #{name} || '%'
+        <if test="!allOwners">
+           and o.id in
+           <foreach collection="ownerIds" item="ownerId" open="(" separator="," close=")">#{ownerId}</foreach>
         </if>
-         order by a.owner_id asc
+        <if test="cursorOwnerNo != null">
+           and
+           <choose>
+             <when test="sortKey == 'OWNER_NAME'">
+               <choose>
+                 <when test="ascending">(o.owner_name, o.owner_no) &gt; (#{cursorValue}, #{cursorOwnerNo})</when>
+                 <otherwise>(o.owner_name, o.owner_no) &lt; (#{cursorValue}, #{cursorOwnerNo})</otherwise>
+               </choose>
+             </when>
+             <otherwise>
+               <choose>
+                 <when test="ascending">o.owner_no &gt; #{cursorValue}</when>
+                 <otherwise>o.owner_no &lt; #{cursorValue}</otherwise>
+               </choose>
+             </otherwise>
+           </choose>
+        </if>
+         order by
+         <choose>
+           <when test="sortKey == 'OWNER_NAME'">o.owner_name</when>
+           <otherwise>o.owner_no</otherwise>
+         </choose>
+         <choose>
+           <when test="ascending">asc,</when>
+           <otherwise>desc,</otherwise>
+         </choose>
+         o.owner_no
+         <choose>
+           <when test="ascending">asc</when>
+           <otherwise>desc</otherwise>
+         </choose>
          limit #{limit}
         </script>
         """)
-    List<OwnerDirectoryPO> page(@Param("ownerCode") String ownerCode,
-                                @Param("name") String name,
-                                @Param("cursorId") Long cursorId,
+    List<OwnerDirectoryPO> page(@Param("ownerNo") String ownerNo,
+                                @Param("ownerName") String ownerName,
+                                @Param("allOwners") boolean allOwners,
+                                @Param("ownerIds") Collection<Long> ownerIds,
+                                @Param("sortKey") String sortKey,
+                                @Param("ascending") boolean ascending,
+                                @Param("cursorValue") String cursorValue,
+                                @Param("cursorOwnerNo") String cursorOwnerNo,
                                 @Param("limit") int limit);
 }

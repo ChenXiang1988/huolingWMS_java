@@ -65,6 +65,19 @@ function toggle() {
   flex-wrap: wrap;
   gap: 16px;
 }
+/*
+ * UI-C02：每个筛选项按自身宽度占位，横向排开，不被撑成整行。
+ * 插槽内容不继承本组件的作用域，故用 `:deep(> *)` 只作用到直接子项，不进控件内部结构。
+ * 控件根容器自带 `width: 100%`（FormInput 的 `.form-input` 就是如此，表单页靠它撑满字段宽度），
+ * 到筛选区里这个 100% 会吃满 `.filter-fields`，把后面的控件挤到第二行，故此处压回 `width: auto`，
+ * 由调用方写在控件上的宽度（如 `style="width: 200px"`）决定实际宽度。
+ * 前缀 `.filter-bar` 用于抬高优先级：`packages/design/src/index.ts` 里 FilterBar 先于 FormInput 导出，
+ * 两条同级的 class 选择器相撞时后者胜出，仅写 `.filter-fields :deep(> *)` 压不过控件的 `width: 100%`。
+ */
+.filter-bar .filter-fields :deep(> *) {
+  flex: 0 0 auto;
+  width: auto;
+}
 /* UI-C02：折叠时只保留前 4 项，第 5 项起不渲染；`:deep(> …)` 限定直接子项，不影响控件内部结构 */
 .filter-fields.is-collapsed :deep(> :nth-child(n + 5)) {
   display: none;

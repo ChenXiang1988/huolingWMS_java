@@ -226,7 +226,8 @@ class SkuReviewServiceTest {
         }
 
         @Override
-        public void markFailed(Long id, String error, Instant now) {
+        public int markFailed(Long id, String error, Instant now) {
+            return 1;
         }
     }
 }

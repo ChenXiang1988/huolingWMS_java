@@ -12,6 +12,7 @@ import {
   FormField,
   FormInput,
   FormSection,
+  PageHeader,
   StatusTag,
   formatListTime,
   parseUtcIso,
@@ -437,11 +438,9 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- UI-P01：页头给标题，筛选区、表格与分页同容器 -->
+  <PageHeader title="档案审核" />
   <el-card>
-    <template #header>
-      <div class="page-header"><span>档案审核</span></div>
-    </template>
-
     <!-- UI-S05、UI-S07：降级数据只出一条提示条，显示最早的数据时间与「刷新取实时」出口 -->
     <DegradedBanner :sources="degradeSources" @refresh="refreshDegraded" />
 
@@ -639,11 +638,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 /* UI-P01：批量操作条紧贴表格上方，间距取 4 的倍数（UI-T14） */
 .batch-bar {
   display: flex;
