@@ -56,9 +56,14 @@ public abstract class SiteDbTestSupport {
     private final Set<String> archiveNos = new LinkedHashSet<>();
     private final Set<String> requestNos = new LinkedHashSet<>();
     private final Set<String> acceptNos = new LinkedHashSet<>();
+    private final Set<Long> ownerStatusIds = new LinkedHashSet<>();
 
     @AfterEach
     void cleanUpCreatedRows() {
+        for (Long ownerId : ownerStatusIds) {
+            jdbc.update("delete from site_owner_status where owner_id = ?", ownerId);
+        }
+        ownerStatusIds.clear();
         for (String requestNo : requestNos) {
             jdbc.update("delete from site_archive_change_request where request_no = ?", requestNo);
         }
@@ -118,6 +123,45 @@ public abstract class SiteDbTestSupport {
         if (acceptNo != null) {
             acceptNos.add(acceptNo);
         }
+    }
+
+    /**
+     * 造一条货主状态副本并登记清理：{@code dataTimestamp} 由用例给出，
+     * 用于覆盖「阈值内放行」与「超过阈值拒绝」两条判定。
+     */
+    protected long applyOwnerStatus(String status, long sourceVersion, Instant dataTimestamp) {
+        long ownerId = nextId();
+        ownerStatusIds.add(ownerId);
+        // 编号取完整标识：{@code uk_site_owner_status_no} 要求唯一，截断成六位会在同一次运行内相撞。
+        String ownerNo = ownerNoOf(ownerId);
+        jdbc.update("""
+            insert into site_owner_status (owner_id, owner_no, status, source_version, event_id,
+                data_timestamp, updated_at)
+            values (?, ?, ?, ?, ?, ?, ?)
+            """, ownerId, ownerNo, status, sourceVersion, ownerNo + "#" + sourceVersion,
+            java.time.OffsetDateTime.ofInstant(dataTimestamp, java.time.ZoneOffset.UTC),
+            java.time.OffsetDateTime.now(java.time.ZoneOffset.UTC));
+        return ownerId;
+    }
+
+    /** 造数用的货主编号：完整标识拼上 OW 前缀，满足 {@code ^OW[A-Z0-9]{6,30}$} 且同一次运行内不重。 */
+    protected static String ownerNoOf(long ownerId) {
+        return "OW" + ownerId;
+    }
+
+    /** 登记一个货主标识，用例结束删除其副本行（没有副本行时删除是空操作）。 */
+    protected long registerOwnerStatus(long ownerId) {
+        ownerStatusIds.add(ownerId);
+        return ownerId;
+    }
+
+    /** 货主状态下行摘要：字段口径与 Hub 的 {@code OwnerStatusChangedEvent} 一致。 */
+    protected String ownerStatusPayload(long ownerId, String ownerNo, String status, long version,
+                                        Instant changedAt) {
+        return """
+            {"eventId":"%s#%d","ownerId":"%d","ownerNo":"%s","status":"%s","action":"DISABLE",
+             "changedAt":"%s","version":%d}
+            """.formatted(ownerNo, version, ownerId, ownerNo, status, changedAt, version);
     }
 
     /** 下行档案摘要：字段口径与 Hub 的 {@code ArchiveEventPayload} 一致。 */

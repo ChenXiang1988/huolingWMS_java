@@ -63,10 +63,12 @@ public class ArchiveOutboxRepositoryImpl implements ArchiveOutboxRepository {
     }
 
     @Override
-    public void markFailed(Long id, String error, Instant now) {
+    public int markFailed(Long id, String error, Instant now) {
         String trimmed = error == null ? null
             : (error.length() > 256 ? error.substring(0, 256) : error);
         mapper.markFailed(id, trimmed, offset(now));
+        Integer retryCount = mapper.findRetryCount(id);
+        return retryCount == null ? 0 : retryCount;
     }
 
     private ArchiveOutboxMessage toDomain(OutboxPO po) {

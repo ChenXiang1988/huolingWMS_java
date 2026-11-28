@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huoling.wms.masterdata.domain.SkuSnapshotRule;
 import com.huoling.wms.site.config.SiteProperties;
+import com.huoling.wms.site.domain.DownlinkEventConsumer;
 import com.huoling.wms.site.domain.SiteChangeRequestRepository;
 import com.huoling.wms.site.domain.SkuSnapshot;
 import com.huoling.wms.site.domain.SkuSnapshotRepository;
@@ -31,7 +32,7 @@ import java.util.List;
  * <p>只缓存生效与停用两态：草稿、待审核、驳回不进本仓缓存（契约 API-010「本仓生效档案」）。
  */
 @Service
-public class SkuSnapshotConsumer {
+public class SkuSnapshotConsumer implements DownlinkEventConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(SkuSnapshotConsumer.class);
 
@@ -62,6 +63,7 @@ public class SkuSnapshotConsumer {
      * @param payloadJson 下行摘要
      * @return 是否真的应用了这条消息（版本落后、状态不生效或非本仓都返回 {@code false}）
      */
+    @Override
     public boolean consume(String eventId, String eventType, String payloadJson) {
         if (eventType == null) {
             log.warn("下行事件 {} 缺少事件类型，按未知事件丢弃", eventId);

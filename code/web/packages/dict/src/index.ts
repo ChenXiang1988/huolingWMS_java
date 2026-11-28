@@ -13,16 +13,18 @@ export const accountStatusTags: Record<string, 'success' | 'info'> = {
 }
 
 /**
- * 受理状态词。商品档案的受理查询（API-015~API-017）取值见契约字段表 `acceptStatus`：
- * `PROCESSING`、`SUCCEEDED`、`FAILED`；`PENDING`／`RUNNING` 保留给身份模块的受理结果，
- * 两套码共用同一张词表，页面不各自判断状态取值。
+ * 受理状态词。商品档案的受理查询（API-015~API-017）与货主档案的受理查询（API-027）
+ * 取值同形，见契约字段表 `acceptStatus`：`PROCESSING`、`SUCCEEDED`、`FAILED`；
+ * `PENDING`／`RUNNING` 保留给身份模块的受理结果，两套码共用同一张词表，页面不各自判断状态取值。
+ * 文案取变更 `add-owner-archive` 的 `ui.md`「OA-09」：处理中 / 已成功 / 已失败，
+ * 与业务状态词分开（`UI-W04`）。
  */
 export const acceptanceStatusLabels: Record<string, string> = {
   PENDING: '待处理',
   PROCESSING: '处理中',
   RUNNING: '处理中',
-  SUCCEEDED: '成功',
-  FAILED: '失败',
+  SUCCEEDED: '已成功',
+  FAILED: '已失败',
 }
 
 export const acceptanceStatusTags: Record<string, 'info' | 'warning' | 'success' | 'danger'> = {
@@ -221,3 +223,77 @@ export const sortDirOptions: Array<{ value: string; label: string }> = [
   { value: 'desc', label: '降序' },
   { value: 'asc', label: '升序' },
 ]
+
+/**
+ * 货主档案状态词。取值见变更 `add-owner-archive` 契约「字段结构与枚举」：
+ * `status` 只有 `ACTIVE`、`DISABLED` 两值，界面词按该变更 `ui.md` 第 2.3 节取「可用」「停用」。
+ * 语义色同样取该节：可用＝已完成（成功色），停用＝终止（信息色）；
+ * 状态只表达主数据可用性，不表达合同是否生效（`D33`）。
+ */
+export const ownerStatusLabels: Record<string, string> = {
+  ACTIVE: '可用',
+  DISABLED: '停用',
+}
+
+export const ownerStatusTags: Record<string, 'success' | 'info'> = {
+  ACTIVE: 'success',
+  DISABLED: 'info',
+}
+
+/** 货主档案状态下拉的可选值，取契约枚举闭集，顺序为可用、停用。 */
+export const ownerStatusOptions = ['ACTIVE', 'DISABLED'] as const
+
+/** 最近一次状态变更的动作词，闭集见契约字段表 `lastStatusChange.action`。 */
+export const ownerStatusChangeActionLabels: Record<string, string> = {
+  CREATE: '建档',
+  DISABLE: '停用',
+  ENABLE: '启用',
+}
+
+/**
+ * 货主档案详情抽屉的分区标题与顺序，逐字取 `ui.md`「OA-02」：
+ * 基础信息 → 状态变更 → 操作记录，没有的分区跳过但不重排（`UI-D05`）。
+ */
+export const ownerSectionTitles = {
+  basic: '基础信息',
+  statusChange: '状态变更',
+  audit: '操作记录',
+} as const
+
+/**
+ * 货主档案字段的中文标签，只此一份（`UI-W05` 一个枚举一个词、`UI-W19` 术语固定）。
+ * 键取契约「字段结构与枚举」的英文名；列表、详情、表单共用同一套词，页面不再各写一份。
+ */
+export const ownerFieldLabels: Record<string, string> = {
+  ownerNo: '货主编号',
+  ownerName: '货主名称',
+  contactName: '联系人',
+  contactPhone: '联系电话',
+  creditCode: '信用代码',
+  status: '状态',
+  version: '版本号',
+  action: '动作',
+  reason: '原因',
+  operator: '操作人',
+  changedAt: '变更时间',
+  createdBy: '创建人',
+  createdTime: '创建时间',
+  updatedBy: '最后修改人',
+  updateTime: '最后修改时间',
+}
+
+/**
+ * 货主档案列表的排序白名单，取值闭集见契约 API-021「请求」：`ownerNo`、`ownerName`、`updateTime`。
+ * 白名单外的列不挂排序图标，也不给出排序选项。
+ */
+export const ownerSortOptions: Array<{ value: string; label: string }> = [
+  { value: 'ownerNo', label: '货主编号' },
+  { value: 'ownerName', label: '货主名称' },
+  { value: 'updateTime', label: '更新时间' },
+]
+
+/**
+ * 键集分页的每页条数档位，取 `ui.md`「OA-01」：20 / 50 / 100。
+ * 契约不返回总数，故分页控件只保留上一页、下一页与每页条数（`UI-C08` 的退化规则）。
+ */
+export const keysetPageSizes = [20, 50, 100] as const

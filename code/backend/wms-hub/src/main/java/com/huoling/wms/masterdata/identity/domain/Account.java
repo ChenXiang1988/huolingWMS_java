@@ -80,6 +80,18 @@ public class Account {
         return employeeId != null;
     }
 
+    /**
+     * 账号所在端：绑定货主即货主端，否则运营端（{@code 05}「登录某端时只加载该端角色」）。
+     *
+     * <p>判定只看 {@code ownerId} 是否为空，不看员工/货主的类型分支（D03）：
+     * 「绑定货主」是一个身份事实，不是「内外部货主」的分类。
+     * 角色端标识比对、登录端点、令牌端标识三处都必须用同一个判定，
+     * 否则会出现「角色挂在货主端、令牌发成运营端」这种半通不通的账号。
+     */
+    public ClientType client() {
+        return ownerId != null ? ClientType.OWNER : ClientType.HUB;
+    }
+
     public Long id() {
         return id;
     }

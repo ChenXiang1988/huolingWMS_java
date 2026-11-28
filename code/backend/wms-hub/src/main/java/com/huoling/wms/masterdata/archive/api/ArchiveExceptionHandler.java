@@ -1,5 +1,6 @@
 package com.huoling.wms.masterdata.archive.api;
 
+import com.huoling.wms.masterdata.acceptance.domain.AcceptanceException;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
 import com.huoling.wms.masterdata.archive.domain.ArchiveException;
 import com.huoling.wms.masterdata.domain.SkuRuleViolation;
@@ -9,6 +10,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -49,6 +51,28 @@ public class ArchiveExceptionHandler {
 
     @ExceptionHandler(ArchiveException.class)
     public ResponseEntity<ArchiveResponse<Void>> handleArchive(ArchiveException e) {
+        return failure(e.code(), e.getMessage(), e.retryAfterMs());
+    }
+
+    /**
+     * 入口字段级错误：按契约 1.1 输出 {@code details}（契约 1.8 API-020 的已废弃参数）。
+     *
+     * <p>比 {@link ArchiveException} 更具体，Spring 会优先匹配本处理器；
+     * 其余档案错误仍走上面那条，响应体不多也不少字段。
+     */
+    @ExceptionHandler(ArchiveParamException.class)
+    public ResponseEntity<ArchiveResponse<Void>> handleParam(ArchiveParamException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ArchiveResponse.invalid(e.getMessage(), e.details()));
+    }
+
+    /**
+     * 受理与幂等设施的异常（受理机制上移到 {@code masterdata.acceptance} 后不再共用档案异常类型）。
+     *
+     * <p>码值与映射不变：幂等冲突、处理中与依赖不可用的 HTTP 状态和 {@code retryable} 与上移前一致。
+     */
+    @ExceptionHandler(AcceptanceException.class)
+    public ResponseEntity<ArchiveResponse<Void>> handleAcceptance(AcceptanceException e) {
         return failure(e.code(), e.getMessage(), e.retryAfterMs());
     }
 

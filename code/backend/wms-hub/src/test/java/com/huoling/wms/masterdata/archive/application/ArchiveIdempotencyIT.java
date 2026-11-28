@@ -1,7 +1,11 @@
 package com.huoling.wms.masterdata.archive.application;
 
 import com.huoling.wms.hub.HubApplication;
-import com.huoling.wms.masterdata.archive.domain.AcceptanceStatus;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceCommand;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
+import com.huoling.wms.masterdata.acceptance.domain.AcceptanceException;
+import com.huoling.wms.masterdata.acceptance.domain.AcceptanceQuery;
+import com.huoling.wms.masterdata.acceptance.domain.AcceptanceStatus;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
 import com.huoling.wms.masterdata.archive.domain.ArchiveException;
 import com.huoling.wms.masterdata.archive.support.ArchiveDbTestSupport;
@@ -27,12 +31,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * 幂等与异步受理（design「幂等与异步事件」、契约「幂等约定」「写接口统一响应」）：
+ * 幂等与异步受理（design「幂等与异步受理」、契约「幂等约定」「写接口统一响应」）：
  * 作用域为归属货主加接口加键，窗口不少于二十四小时；重复请求返回首次受理号，同键异体冲突，
  * 处理中返回可重试错误；受理查询从处理中走到成功或失败。
  *
  * <p>并发用闩锁同步起跑，不用 sleep 赌时序；断言落在库里的受理记录条数与业务动作执行次数上。
  * 把幂等唯一键或判定顺序改坏，这些断言立即变红。
+ *
+ * <p>受理机制上移到 {@code masterdata.acceptance} 后本用例同步改造：行为口径不变，
+ * 只把受理查询换成带「商品档案接口号区间」谓词的可见范围（tasks 1.7）。
  */
 @SpringBootTest(classes = HubApplication.class)
 class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
@@ -60,7 +67,7 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
                 pool.submit(() -> {
                     try {
                         startLine.await();
-                        ArchiveAcceptanceService.Ticket ticket = acceptanceService.submit(
+                        AcceptanceService.Ticket ticket = acceptanceService.submit(
                             command(ownerId, key, "create", "body-same"),
                             () -> {
                                 executions.incrementAndGet();
@@ -98,14 +105,14 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         for (Throwable failure : failures) {
             assertThat(failure)
                 .as("并发重复提交只允许回放受理号或返回 IDEMPOTENT_IN_PROGRESS，实际为 %s", failure)
-                .isInstanceOf(ArchiveException.class);
-            ArchiveException archive = (ArchiveException) failure;
-            assertThat(archive.code()).isEqualTo(ArchiveErrorCodes.IDEMPOTENT_IN_PROGRESS);
-            assertThat(archive.retryAfterMs()).isPositive();
+                .isInstanceOf(AcceptanceException.class);
+            AcceptanceException conflict = (AcceptanceException) failure;
+            assertThat(conflict.code()).isEqualTo(ArchiveErrorCodes.IDEMPOTENT_IN_PROGRESS);
+            assertThat(conflict.retryAfterMs()).isPositive();
         }
 
         // 完成后的重复提交回放首次受理号，不再执行
-        ArchiveAcceptanceService.Ticket replay = acceptanceService.submit(
+        AcceptanceService.Ticket replay = acceptanceService.submit(
             command(ownerId, key, "create", "body-same"),
             () -> {
                 executions.incrementAndGet();
@@ -123,19 +130,19 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         String key = "conflict-" + nextId();
         registerIdempotencyKey(key);
 
-        ArchiveAcceptanceService.Ticket first = acceptanceService.submit(
+        AcceptanceService.Ticket first = acceptanceService.submit(
             command(ownerId, key, "create", "body-a"), () -> new Created("SKU-A"));
         registerAcceptNo(first.acceptNo());
         awaitStatus(scope, first.acceptNo(), AcceptanceStatus.SUCCEEDED);
 
         assertThatThrownBy(() -> acceptanceService.submit(
             command(ownerId, key, "create", "body-b"), () -> new Created("SKU-B")))
-            .isInstanceOf(ArchiveException.class)
-            .extracting(e -> ((ArchiveException) e).code())
+            .isInstanceOf(AcceptanceException.class)
+            .extracting(e -> ((AcceptanceException) e).code())
             .isEqualTo(ArchiveErrorCodes.IDEMPOTENT_KEY_CONFLICT);
 
         assertThat(countAcceptances(scope, API, key)).isEqualTo(1);
-        ArchiveAcceptanceService.View view = acceptanceService.find(scope, first.acceptNo());
+        AcceptanceService.View view = acceptanceService.find(query(scope), first.acceptNo());
         assertThat(view.result().get("archiveId").asText()).isEqualTo("SKU-A");
     }
 
@@ -158,11 +165,11 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
 
         assertThatThrownBy(() -> acceptanceService.submit(
             command(ownerId, key, "create", "body"), () -> new Created("SKU-WAIT")))
-            .isInstanceOf(ArchiveException.class)
+            .isInstanceOf(AcceptanceException.class)
             .satisfies(e -> {
-                ArchiveException archive = (ArchiveException) e;
-                assertThat(archive.code()).isEqualTo(ArchiveErrorCodes.IDEMPOTENT_IN_PROGRESS);
-                assertThat(archive.retryAfterMs()).isPositive();
+                AcceptanceException inflight = (AcceptanceException) e;
+                assertThat(inflight.code()).isEqualTo(ArchiveErrorCodes.IDEMPOTENT_IN_PROGRESS);
+                assertThat(inflight.retryAfterMs()).isPositive();
             });
         assertThat(countAcceptances(scope, API, key)).isZero();
     }
@@ -177,7 +184,7 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
 
         CountDownLatch actionStarted = new CountDownLatch(1);
         CountDownLatch releaseAction = new CountDownLatch(1);
-        ArchiveAcceptanceService.Ticket ticket = acceptanceService.submit(
+        AcceptanceService.Ticket ticket = acceptanceService.submit(
             command(ownerId, key, "create", "body-pending"), () -> {
                 actionStarted.countDown();
                 awaitQuietly(releaseAction);
@@ -189,13 +196,13 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         assertThat(actionStarted.await(WAIT.toSeconds(), TimeUnit.SECONDS))
             .as("业务动作应已被异步调度").isTrue();
 
-        ArchiveAcceptanceService.View processing = acceptanceService.find(scope, ticket.acceptNo());
+        AcceptanceService.View processing = acceptanceService.find(query(scope), ticket.acceptNo());
         assertThat(processing.acceptStatus()).isEqualTo(AcceptanceStatus.PROCESSING.name());
         assertThat(processing.result()).as("处理中不得伪造结果").isNull();
         assertThat(processing.dataTimestamp()).isNotNull();
 
         releaseAction.countDown();
-        ArchiveAcceptanceService.View succeeded =
+        AcceptanceService.View succeeded =
             awaitStatus(scope, ticket.acceptNo(), AcceptanceStatus.SUCCEEDED);
         assertThat(succeeded.result().get("archiveId").asText()).isEqualTo("SKU-PENDING");
         assertThat(succeeded.errorCode()).isNull();
@@ -209,19 +216,19 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         String key = "failed-" + nextId();
         registerIdempotencyKey(key);
 
-        ArchiveAcceptanceService.Ticket ticket = acceptanceService.submit(
+        AcceptanceService.Ticket ticket = acceptanceService.submit(
             command(ownerId, key, "create", "body-failed"), () -> {
                 throw new ArchiveException(ArchiveErrorCodes.RULE_DUPLICATE_CODE, "货主内编码重复");
             });
         registerAcceptNo(ticket.acceptNo());
 
-        ArchiveAcceptanceService.View failed =
+        AcceptanceService.View failed =
             awaitStatus(scope, ticket.acceptNo(), AcceptanceStatus.FAILED);
         assertThat(failed.errorCode()).isEqualTo(ArchiveErrorCodes.RULE_DUPLICATE_CODE);
         assertThat(failed.result()).isNull();
 
         // 失败也算「首次受理已有结果」：重复请求回放同一受理号，不产生第二条受理记录
-        ArchiveAcceptanceService.Ticket replay = acceptanceService.submit(
+        AcceptanceService.Ticket replay = acceptanceService.submit(
             command(ownerId, key, "create", "body-failed"), () -> new Created("SKU-OTHER"));
         assertThat(replay.acceptNo()).isEqualTo(ticket.acceptNo());
         assertThat(countAcceptances(scope, API, key)).isEqualTo(1);
@@ -235,7 +242,7 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         String key = "window-" + nextId();
         registerIdempotencyKey(key);
 
-        ArchiveAcceptanceService.Ticket ticket = acceptanceService.submit(
+        AcceptanceService.Ticket ticket = acceptanceService.submit(
             command(ownerId, key, "create", "body-window"), () -> new Created("SKU-WINDOW"));
         registerAcceptNo(ticket.acceptNo());
 
@@ -258,24 +265,30 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
         String key = "scope-" + nextId();
         registerIdempotencyKey(key);
 
-        ArchiveAcceptanceService.Ticket ticket = acceptanceService.submit(
+        AcceptanceService.Ticket ticket = acceptanceService.submit(
             command(ownerId, key, "create", "body-scope"), () -> new Created("SKU-SCOPE"));
         registerAcceptNo(ticket.acceptNo());
 
         // 另一个货主按受理号查询：按目标不存在处理，不泄露受理内容
-        assertThatThrownBy(() -> acceptanceService.find(String.valueOf(otherOwner), ticket.acceptNo()))
-            .isInstanceOf(ArchiveException.class)
-            .extracting(e -> ((ArchiveException) e).code())
+        assertThatThrownBy(() -> acceptanceService.find(
+            ArchiveAcceptanceQueries.owner(otherOwner), ticket.acceptNo()))
+            .isInstanceOf(AcceptanceException.class)
+            .extracting(e -> ((AcceptanceException) e).code())
             .isEqualTo(ArchiveErrorCodes.NOT_FOUND_ARCHIVE);
         // 运营端全量视图（作用域为空）可查
-        assertThat(acceptanceService.find(null, ticket.acceptNo()).acceptNo())
+        assertThat(acceptanceService.find(ArchiveAcceptanceQueries.hub(), ticket.acceptNo()).acceptNo())
             .isEqualTo(ticket.acceptNo());
     }
 
-    private ArchiveAcceptanceService.Command command(long ownerId, String key, String target,
-                                                     String body) {
-        return new ArchiveAcceptanceService.Command(String.valueOf(ownerId), API, key, target, body,
-            "DRAFT", 0L);
+    private AcceptanceCommand command(long ownerId, String key, String target, String body) {
+        return AcceptanceCommand.of(String.valueOf(ownerId), API, key, target, body, "DRAFT", 0L);
+    }
+
+    /** 商品档案侧的受理查询：作用域按货主给出，接口号限定在 API-001 至 API-020。 */
+    private AcceptanceQuery query(String scope) {
+        return scope == null
+            ? ArchiveAcceptanceQueries.hub()
+            : ArchiveAcceptanceQueries.owner(Long.valueOf(scope));
     }
 
     private String idempotencyFingerprint(String target, String body) {
@@ -293,10 +306,11 @@ class ArchiveIdempotencyIT extends ArchiveDbTestSupport {
     }
 
     /** 等待受理单进入指定状态：按状态轮询到截止时刻，不用固定 sleep 赌时序。 */
-    private ArchiveAcceptanceService.View awaitStatus(String scope, String acceptNo, AcceptanceStatus expected) {
+    private AcceptanceService.View awaitStatus(String scope, String acceptNo,
+                                               AcceptanceStatus expected) {
         long deadline = System.nanoTime() + WAIT.toNanos();
         while (System.nanoTime() < deadline) {
-            ArchiveAcceptanceService.View view = acceptanceService.find(scope, acceptNo);
+            AcceptanceService.View view = acceptanceService.find(query(scope), acceptNo);
             if (expected.name().equals(view.acceptStatus())) {
                 return view;
             }

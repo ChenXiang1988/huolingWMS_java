@@ -2,7 +2,8 @@ package com.huoling.wms.masterdata.archive.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceCommand;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveCommandService;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveQueryService;
@@ -58,13 +59,13 @@ public class OwnerArchiveController {
     private final SkuArchiveCommandService commandService;
     private final SkuArchiveQueryService queryService;
     private final ArchiveAccessGuard guard;
-    private final ArchiveAcceptanceService acceptance;
+    private final AcceptanceService acceptance;
     private final JwtTokenService tokenService;
 
     public OwnerArchiveController(SkuArchiveCommandService commandService,
                                  SkuArchiveQueryService queryService,
                                  ArchiveAccessGuard guard,
-                                 ArchiveAcceptanceService acceptance,
+                                 AcceptanceService acceptance,
                                  JwtTokenService tokenService) {
         this.commandService = commandService;
         this.queryService = queryService;
@@ -99,7 +100,7 @@ public class OwnerArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> create(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> create(
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
             @RequestBody CreateRequest request) {
@@ -109,7 +110,7 @@ public class OwnerArchiveController {
         request.toFields().requireComplete();
         String scope = String.valueOf(ownerId);
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scope, API_CREATE, idempotencyKey, "create",
+            AcceptanceCommand.of(scope, API_CREATE, idempotencyKey, "create",
                 request.toString(), SkuArchiveStatus.DRAFT.name(), user.accountId()),
             () -> commandService.createDraft(ownerId, request.toFields(), user.accountId())));
     }
@@ -170,7 +171,7 @@ public class OwnerArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> edit(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> edit(
             @Parameter(description = "档案编号", schema = @Schema(type = "string")) @PathVariable String id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
@@ -183,7 +184,7 @@ public class OwnerArchiveController {
         request.toFields().requireComplete();
         String scope = String.valueOf(ownerId);
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scope, API_EDIT, idempotencyKey, id,
+            AcceptanceCommand.of(scope, API_EDIT, idempotencyKey, id,
                 request.toString(), SkuArchiveStatus.DRAFT.name(), user.accountId()),
             () -> commandService.edit(id, ownerId, request.version(), request.toFields(),
                 user.accountId())));
@@ -221,7 +222,7 @@ public class OwnerArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> submit(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> submit(
             @Parameter(description = "档案编号", schema = @Schema(type = "string")) @PathVariable String id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
@@ -233,7 +234,7 @@ public class OwnerArchiveController {
         SubmitRequest body = request == null ? new SubmitRequest(null) : request;
         String scope = String.valueOf(ownerId);
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scope, API_SUBMIT, idempotencyKey, id,
+            AcceptanceCommand.of(scope, API_SUBMIT, idempotencyKey, id,
                 body.toString(), SkuArchiveStatus.DRAFT.name(), user.accountId()),
             () -> commandService.submit(id, ownerId, body.version(), user.accountId())));
     }
@@ -267,7 +268,7 @@ public class OwnerArchiveController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> disable(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> disable(
             @Parameter(description = "档案编号", schema = @Schema(type = "string")) @PathVariable String id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
@@ -280,7 +281,7 @@ public class OwnerArchiveController {
         ArchiveEntryChecks.requireText(request.reason(), "reason", ArchiveEntryChecks.REASON_MAX);
         String scope = String.valueOf(ownerId);
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(scope, API_DISABLE, idempotencyKey, id,
+            AcceptanceCommand.of(scope, API_DISABLE, idempotencyKey, id,
                 request.toString(), SkuArchiveStatus.ACTIVE.name(), user.accountId()),
             () -> commandService.disable(id, ownerId, request.version(), request.reason(),
                 user.accountId())));

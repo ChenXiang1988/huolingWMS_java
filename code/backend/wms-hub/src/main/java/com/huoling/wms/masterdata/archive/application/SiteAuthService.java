@@ -4,7 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
 import com.huoling.wms.masterdata.archive.domain.ArchiveException;
-import com.huoling.wms.masterdata.archive.domain.IdempotencyDecision;
+import com.huoling.wms.masterdata.acceptance.application.IdempotencyService;
+import com.huoling.wms.masterdata.acceptance.domain.IdempotencyDecision;
 import com.huoling.wms.masterdata.archive.infrastructure.SiteRefreshTokenStore;
 import com.huoling.wms.masterdata.archive.infrastructure.config.SiteRegistryProperties;
 import com.huoling.wms.masterdata.identity.infrastructure.JwtTokenService;
@@ -41,13 +42,13 @@ public class SiteAuthService {
     private final SiteRegistryProperties registry;
     private final SiteRefreshTokenStore refreshTokenStore;
     private final JwtTokenService tokenService;
-    private final ArchiveIdempotencyService idempotency;
+    private final IdempotencyService idempotency;
     private final ObjectMapper objectMapper;
 
     public SiteAuthService(SiteRegistryProperties registry,
                            SiteRefreshTokenStore refreshTokenStore,
                            JwtTokenService tokenService,
-                           ArchiveIdempotencyService idempotency,
+                           IdempotencyService idempotency,
                            ObjectMapper objectMapper) {
         this.registry = registry;
         this.refreshTokenStore = refreshTokenStore;

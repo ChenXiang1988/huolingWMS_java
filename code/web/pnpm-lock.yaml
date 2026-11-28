@@ -10,6 +10,9 @@ importers:
 
   apps/admin:
     dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.3.1
+        version: 2.3.2(vue@3.5.46(typescript@5.9.3))
       '@wms/design':
         specifier: workspace:*
         version: link:../../packages/design
@@ -121,6 +124,9 @@ importers:
 
   packages/design:
     dependencies:
+      '@element-plus/icons-vue':
+        specifier: ^2.3.1
+        version: 2.3.2(vue@3.5.46(typescript@5.9.3))
       '@wms/dict':
         specifier: workspace:*
         version: link:../dict

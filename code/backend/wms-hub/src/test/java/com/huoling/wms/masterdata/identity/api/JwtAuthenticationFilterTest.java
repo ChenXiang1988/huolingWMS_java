@@ -38,15 +38,24 @@ class JwtAuthenticationFilterTest {
     private final ObjectMapper mapper = new ObjectMapper();
     private final Set<String> blacklisted = new HashSet<>();
     private final TokenBlacklist blacklist = jti -> jti != null && blacklisted.contains(jti);
+
+    /** 货主端会话可用性：默认全部可用，用例按需把账号放进不可用集合。 */
+    private final Set<Long> unusableAccounts = new HashSet<>();
+
     private JwtTokenService tokens;
     private JwtAuthenticationFilter filter;
+    private JwtAuthenticationFilter ownerCapableFilter;
 
     @BeforeEach
     void setUp() {
         JwtProperties properties = new JwtProperties();
         properties.setSecret(SECRET);
         tokens = new JwtTokenService(properties);
-        filter = new JwtAuthenticationFilter(tokens, blacklist, mapper);
+        filter = new JwtAuthenticationFilter(tokens, blacklist, mapper, accountId -> true);
+        // 商品档案三端接口那一道门的形态：可放行货主端令牌，用于验第五步「会话可用性」。
+        ownerCapableFilter = new JwtAuthenticationFilter(tokens, blacklist, mapper,
+            Set.of(ClientType.HUB, ClientType.OWNER, ClientType.SITE),
+            accountId -> !unusableAccounts.contains(accountId));
     }
 
     @Test
@@ -127,9 +136,27 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
+    @DisplayName("货主停用：已签发的货主端令牌下一次请求即 401 AUTH_1003，不再是 403")
+    void 货主停用后令牌失效() throws Exception {
+        Long ownerAccountId = 2002L;
+        String token = tokens.issue(ownerAccountId, ClientType.OWNER);
+
+        Attempt usable = run(ownerCapableFilter, "/api/hub/owners", "Bearer " + token);
+        assertThat(usable.passedThrough()).as("货主可用时令牌放行，业务鉴权由控制器负责").isTrue();
+
+        unusableAccounts.add(ownerAccountId);
+        Attempt rejected = run(ownerCapableFilter, "/api/hub/owners", "Bearer " + token);
+        assertThat(rejected.passedThrough()).isFalse();
+        assertThat(rejected.status()).isEqualTo(401);
+        assertThat(rejected.body().get("code").asInt()).as("按账号不可用处置，不新增错误码").isEqualTo(1003);
+        assertThat(rejected.body().get("retryable").asBoolean()).isFalse();
+    }
+
+    @Test
     @DisplayName("存储降级：黑名单读取端口返回未命中时不拦请求（降级实现见 RefreshTokenStore）")
     void 黑名单降级不拒绝() throws Exception {
-        JwtAuthenticationFilter degraded = new JwtAuthenticationFilter(tokens, jti -> false, mapper);
+        JwtAuthenticationFilter degraded = new JwtAuthenticationFilter(tokens, jti -> false, mapper,
+            accountId -> true);
         String token = tokens.issue(Long.valueOf(ACCOUNT_ID), ClientType.HUB);
         MockHttpServletResponse response = new MockHttpServletResponse();
         AtomicBoolean called = new AtomicBoolean();
@@ -140,11 +167,16 @@ class JwtAuthenticationFilterTest {
     }
 
     private Attempt run(String path, String authorization) throws Exception {
+        return run(filter, path, authorization);
+    }
+
+    private Attempt run(JwtAuthenticationFilter subject, String path, String authorization)
+            throws Exception {
         MockHttpServletRequest request = request(path, authorization);
         MockHttpServletResponse response = new MockHttpServletResponse();
         AtomicBoolean called = new AtomicBoolean();
         FilterChain chain = (req, res) -> called.set(true);
-        filter.doFilter(request, response, chain);
+        subject.doFilter(request, response, chain);
         JsonNode body = response.getContentAsString().isEmpty()
             ? mapper.createObjectNode()
             : mapper.readTree(response.getContentAsString());

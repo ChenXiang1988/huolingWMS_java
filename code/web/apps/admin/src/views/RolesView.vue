@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { AcceptPanel, ActionButton, ActionDrawer, DataTable, FormInput, FormSection, StatusTag } from '@wms/design'
+import { AcceptPanel, ActionButton, ActionDrawer, DataTable, FormInput, FormSection, PageHeader, StatusTag } from '@wms/design'
 import {
   accountStatusLabels,
   accountStatusTags,
@@ -306,8 +306,9 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- UI-P01：页头给标题，筛选区、表格与分页同容器 -->
+  <PageHeader title="角色管理" />
   <el-card>
-    <template #header>角色管理</template>
     <AcceptPanel
       :accept-no="acceptNo"
       :poll="pollAcceptance"

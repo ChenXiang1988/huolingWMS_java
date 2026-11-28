@@ -33,6 +33,15 @@ public interface AccountMapper extends BaseMapper<AccountPO> {
         """)
     int advanceVersion(@Param("accountId") Long accountId, @Param("version") long version);
 
+    /** 某货主下的全部账号标识：停用货主后按它逐个撤销刷新令牌（契约 1.7）。 */
+    @Select("""
+        select id
+          from wms_account
+         where owner_id = #{ownerId}
+         order by id asc
+        """)
+    java.util.List<Long> findIdsByOwnerId(@Param("ownerId") Long ownerId);
+
     /**
      * 只写状态与密码散列，不写 version：版本由同事务内的 advanceVersion 推进，
      * 避免把加载时的旧版本号回写覆盖（契约 API-008 的乐观锁）。

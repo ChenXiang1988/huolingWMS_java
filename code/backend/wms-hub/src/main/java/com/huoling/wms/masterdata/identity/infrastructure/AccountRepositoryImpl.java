@@ -85,6 +85,14 @@ public class AccountRepositoryImpl implements AccountRepository {
         return mapper.advanceVersion(accountId, expectedVersion) == 1;
     }
 
+    @Override
+    public List<Long> findIdsByOwnerId(Long ownerId) {
+        if (ownerId == null) {
+            return List.of();
+        }
+        return mapper.findIdsByOwnerId(ownerId);
+    }
+
     private Account toDomain(AccountPO po) {
         return Account.restore(po.getId(), po.getAccountName(), po.getPasswordHash(),
             po.getEmployeeId(), po.getOwnerId(),

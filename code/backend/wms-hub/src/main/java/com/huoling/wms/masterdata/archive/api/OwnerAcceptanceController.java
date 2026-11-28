@@ -1,6 +1,7 @@
 package com.huoling.wms.masterdata.archive.api;
 
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
+import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceQueries;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.domain.ArchivePermissionCodes;
 import com.huoling.wms.masterdata.identity.api.CurrentUser;
@@ -25,11 +26,11 @@ public class OwnerAcceptanceController {
 
     private static final String API_QUERY = "API-015";
 
-    private final ArchiveAcceptanceService acceptanceService;
+    private final AcceptanceService acceptanceService;
     private final ArchiveAccessGuard guard;
     private final JwtTokenService tokenService;
 
-    public OwnerAcceptanceController(ArchiveAcceptanceService acceptanceService,
+    public OwnerAcceptanceController(AcceptanceService acceptanceService,
                                      ArchiveAccessGuard guard,
                                      JwtTokenService tokenService) {
         this.acceptanceService = acceptanceService;
@@ -40,12 +41,13 @@ public class OwnerAcceptanceController {
     /** API-015：按受理号查询处理中、成功或失败结果。 */
     @GetMapping("/{acceptNo}")
     @RequiresPermission(ArchivePermissionCodes.OWNER_READ)
-    public ArchiveResponse<ArchiveAcceptanceService.View> detail(
+    public ArchiveResponse<AcceptanceService.View> detail(
             @PathVariable String acceptNo,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         CurrentUser user = CurrentUser.from(tokenService, authorization);
         Long ownerId = guard.requireOwner(user.accountId(), user.client());
         guard.limitOwner(ownerId, API_QUERY);
-        return ArchiveResponse.ok(acceptanceService.find(String.valueOf(ownerId), acceptNo));
+        return ArchiveResponse.ok(
+            acceptanceService.find(ArchiveAcceptanceQueries.owner(ownerId), acceptNo));
     }
 }

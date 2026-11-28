@@ -28,6 +28,10 @@ public interface ArchiveOutboxRepository {
     /** 投递成功：记录发送时间。 */
     void markSent(Long id, Instant now);
 
-    /** 投递失败：累计重试次数、记录错误并按退避时间安排下次重试。 */
-    void markFailed(Long id, String error, Instant now);
+    /**
+     * 投递失败：累计重试次数、记录错误并按退避时间安排下次重试。
+     *
+     * @return 本次失败之后的重试次数；投递器据此判断是否已达死信阈值
+     */
+    int markFailed(Long id, String error, Instant now);
 }

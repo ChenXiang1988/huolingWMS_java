@@ -71,10 +71,15 @@ export type SortDir = 'asc' | 'desc'
 /**
  * 写接口统一响应（契约「写接口统一响应」）：HTTP 202，只有受理号与受理时的业务状态快照，
  * 不含执行结果与最终版本号。`status` 不是「提交成功」，只是受理那一刻的业务状态。
+ *
+ * `replayed` 由变更 `add-owner-archive` 的契约 1.6 引入：为真表示本次是同一幂等键的重复请求、
+ * 返回的是首次受理号（`OA-09` 要求界面附一句「沿用首次受理号」）。商品档案票据未带该字段，
+ * 故此处按可选处理，缺省视为首次受理。
  */
 export interface AcceptTicket {
   acceptNo: string
   status: string
+  replayed?: boolean
 }
 
 /** 受理状态闭集，见契约字段表 `acceptStatus`。 */
@@ -338,20 +343,30 @@ export interface SiteChangeRequestQuery extends KeysetQuery, ArchiveSortQuery {
   status?: ChangeRequestStatus | ''
 }
 
-/** API-020 货主选择器条目：`ownerId` 与展示名 `ownerName`（展示字段，不作查询参数）。 */
+/**
+ * API-020 货主选择器条目（变更 `add-owner-archive` 的 **BREAKING** 改造）：
+ * 数据来源由「从货主端账号派生」改为读货主档案，条目为 `ownerId`、`ownerNo`、`ownerName`，
+ * 且只含 `status=ACTIVE` 的货主。`ownerNo` 是本变更新增的可检索标识，
+ * `ownerName` 只是展示字段（契约「API-020 运营查询可用货主」响应）。
+ */
 export interface OwnerOption {
   ownerId: string
+  ownerNo: string
   ownerName: string
 }
 
 /**
- * API-020 查询参数：编码 `ownerCode`、名称 `name` 与键集游标（契约「API-020 运营查询货主选择器」：
- * 「查询参数含编码、名称与键集分页游标」）。
- * `ownerName` 只是响应展示字段（字段表出现位置为「API-020 响应」），不下发为查询参数。
+ * API-020 查询参数（**BREAKING**）：`ownerNo`（精确，1 至 32 位）、`ownerName`（模糊，1 至 64 位）
+ * 与键集游标；两者同时给出取交集。
+ * 旧参数 `ownerCode`、`name` 已被契约删除，传入即 `PARAM_INVALID`，故类型上不再保留，
+ * 以免调用点继续传旧参数（`design.md` 待确认第 5 条：既有代建页必须同批改造）。
  */
 export interface OwnerOptionQuery extends KeysetQuery {
-  ownerCode?: string
-  name?: string
+  ownerNo?: string
+  ownerName?: string
+  /** 排序白名单只有 `ownerNo`、`ownerName`，缺省 `ownerNo` + `asc`（契约 API-020「请求」）。 */
+  sortBy?: 'ownerNo' | 'ownerName' | ''
+  sortDir?: SortDir | ''
 }
 
 /**
@@ -480,7 +495,7 @@ export function createSiteArchiveApi(http: RequestSender) {
 export function createHubOwnerApi(http: RequestSender) {
   const base = `${archiveBasePath.hub}/owners`
   return {
-    /** API-020 按编码或名称搜索货主。 */
+    /** API-020 按货主编号（精确）或货主名称（模糊）搜索可用货主。 */
     search: (query: OwnerOptionQuery) =>
       http.get<KeysetResult<OwnerOption>>(`${base}${buildQuery({ ...query })}`),
   }

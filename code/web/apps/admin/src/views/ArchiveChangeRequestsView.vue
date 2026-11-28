@@ -12,6 +12,7 @@ import {
   FormField,
   FormInput,
   FormSection,
+  PageHeader,
   StatusTag,
   formatDetailTime,
   formatListTime,
@@ -294,11 +295,9 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- UI-P01：页头给标题，筛选区、表格与分页同容器 -->
+  <PageHeader title="变更申请审核" />
   <el-card>
-    <template #header>
-      <div class="page-header"><span>变更申请审核</span></div>
-    </template>
-
     <!-- UI-S05、UI-S07：降级数据只出一条提示条，显示最早的数据时间与「刷新取实时」出口 -->
     <DegradedBanner :sources="degradeSources" @refresh="refreshDegraded" />
 
@@ -437,11 +436,6 @@ onMounted(load)
 </template>
 
 <style scoped>
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 .empty-hint {
   margin: 0 0 16px;
   font-size: 13px;

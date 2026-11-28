@@ -31,6 +31,15 @@ export function formatListTime(value?: string | null): string {
   return format(value, false)
 }
 
+/** 日期档：`YYYY-MM-DD`，供页头的当前日期这类只到天的展示复用，避免页面各自拼日期串。 */
+export function formatDate(value?: string | null): string {
+  const date = toDate(value)
+  if (!date) {
+    return '—'
+  }
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 /** 详情与审计档：`YYYY-MM-DD HH:mm:ss`。 */
 export function formatDetailTime(value?: string | null): string {
   return format(value, true)

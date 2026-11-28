@@ -125,8 +125,11 @@ class IdentifierWireFormatTest {
                 + "\"initialPassword\":\"Secret@123\",\"roleIds\":[\"1001\"]}",
             AccountController.CreateRequest.class);
         assertThat(Identifiers.parse(create.employeeId(), "employeeId")).isEqualTo(9102L);
+        // 契约 1.7 给请求体补了 client 与 ownerId 两个字段，指纹文本随之带上它们：
+        // 同一幂等键换「端」或换归属货主必须被当成另一个请求（IDEMPOTENT_KEY_CONFLICT），
+        // 否则首次受理的回放结果会被另一份请求体冒领。
         assertThat(create.toString())
-            .isEqualTo("CreateRequest[accountName=qa_user, employeeId=9102, "
-                + "initialPassword=Secret@123, roleIds=[1001]]");
+            .isEqualTo("CreateRequest[accountName=qa_user, employeeId=9102, client=null, "
+                + "ownerId=null, initialPassword=Secret@123, roleIds=[1001]]");
     }
 }

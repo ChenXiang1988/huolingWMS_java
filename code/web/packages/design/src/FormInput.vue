@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 /**
  * 单行输入外壳，对应 12 的 `UI-C28`、`UI-C03`，配色取 `UI-T25`：
@@ -28,11 +28,21 @@ defineOptions({ inheritAttrs: false })
 
 const hasError = computed(() => props.error.trim().length > 0)
 const hasHelp = computed(() => props.help.trim().length > 0)
+
+/**
+ * 焦点句柄：`UI-P15` 要求登录失败后焦点回到密码框，页面需要能把焦点移进控件，
+ * 故把内部 `el-input` 的 `focus()` 透出去；不暴露其它内部结构。
+ */
+const inputRef = ref<{ focus: () => void } | null>(null)
+
+defineExpose({
+  focus: () => inputRef.value?.focus(),
+})
 </script>
 
 <template>
   <div class="form-input" :class="{ 'is-error': hasError }">
-    <el-input v-model="model" v-bind="$attrs" />
+    <el-input ref="inputRef" v-model="model" v-bind="$attrs" />
     <p v-if="hasError" class="form-input__message is-error">{{ error }}</p>
     <p v-else-if="hasHelp" class="form-input__message">{{ help }}</p>
   </div>

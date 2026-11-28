@@ -1,8 +1,8 @@
 package com.huoling.wms.masterdata.archive.support;
 
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.IdempotencyService;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
-import com.huoling.wms.masterdata.archive.application.ArchiveIdempotencyService;
 import com.huoling.wms.masterdata.archive.application.ChangeRequestService;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveCommandService;
 import com.huoling.wms.masterdata.archive.application.SkuArchiveQueryService;
@@ -60,10 +60,10 @@ public abstract class ArchiveDbTestSupport {
     protected ChangeRequestService changeRequestService;
 
     @Autowired
-    protected ArchiveAcceptanceService acceptanceService;
+    protected AcceptanceService acceptanceService;
 
     @Autowired
-    protected ArchiveIdempotencyService idempotencyService;
+    protected IdempotencyService idempotencyService;
 
     @Autowired
     protected SkuArchiveRepository archiveRepository;

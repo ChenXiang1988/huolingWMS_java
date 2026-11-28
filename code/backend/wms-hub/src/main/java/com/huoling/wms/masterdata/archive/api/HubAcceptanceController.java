@@ -1,6 +1,7 @@
 package com.huoling.wms.masterdata.archive.api;
 
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
+import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceQueries;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.domain.ArchivePermissionCodes;
 import com.huoling.wms.masterdata.identity.api.CurrentUser;
@@ -25,11 +26,11 @@ public class HubAcceptanceController {
 
     private static final String API_QUERY = "API-016";
 
-    private final ArchiveAcceptanceService acceptanceService;
+    private final AcceptanceService acceptanceService;
     private final ArchiveAccessGuard guard;
     private final JwtTokenService tokenService;
 
-    public HubAcceptanceController(ArchiveAcceptanceService acceptanceService,
+    public HubAcceptanceController(AcceptanceService acceptanceService,
                                    ArchiveAccessGuard guard,
                                    JwtTokenService tokenService) {
         this.acceptanceService = acceptanceService;
@@ -40,11 +41,12 @@ public class HubAcceptanceController {
     /** API-016：按受理号查询，可选作用域为空表示全量。 */
     @GetMapping("/{acceptNo}")
     @RequiresPermission(ArchivePermissionCodes.HUB_READ)
-    public ArchiveResponse<ArchiveAcceptanceService.View> detail(
+    public ArchiveResponse<AcceptanceService.View> detail(
             @PathVariable String acceptNo,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
         CurrentUser.from(tokenService, authorization);
         guard.limitHub(API_QUERY);
-        return ArchiveResponse.ok(acceptanceService.find(null, acceptNo));
+        return ArchiveResponse.ok(
+            acceptanceService.find(ArchiveAcceptanceQueries.hub(), acceptNo));
     }
 }

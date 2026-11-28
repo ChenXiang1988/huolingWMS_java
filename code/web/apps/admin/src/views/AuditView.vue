@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { DataTable, FilterBar, FormInput } from '@wms/design'
+import { DataTable, FilterBar, FormInput, PageHeader } from '@wms/design'
 import { ApiError } from '@wms/request'
 import { useAuthStore } from '../stores/auth'
 
@@ -49,8 +49,9 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- UI-P01：页头给标题，筛选区、表格与分页同容器 -->
+  <PageHeader title="审计日志" />
   <el-card>
-    <template #header>审计日志</template>
     <FilterBar @search="load" @reset="() => { filter.targetAccountId = ''; load() }">
       <FormInput v-model="filter.targetAccountId" placeholder="目标账号 ID" style="width: 220px" />
     </FilterBar>

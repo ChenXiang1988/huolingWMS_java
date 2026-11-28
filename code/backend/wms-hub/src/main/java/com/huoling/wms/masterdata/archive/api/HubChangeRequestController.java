@@ -1,7 +1,8 @@
 package com.huoling.wms.masterdata.archive.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceCommand;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
 import com.huoling.wms.masterdata.archive.application.ArchiveAccessGuard;
 import com.huoling.wms.masterdata.archive.application.ChangeRequestService;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
@@ -42,16 +43,16 @@ public class HubChangeRequestController {
 
     private static final String API_QUERY = "API-012";
     private static final String API_REVIEW = "API-013";
-    private static final String HUB_SCOPE = ArchiveAcceptanceService.SCOPE_HUB;
+    private static final String HUB_SCOPE = AcceptanceService.SCOPE_HUB;
 
     private final ChangeRequestService changeRequestService;
     private final ArchiveAccessGuard guard;
-    private final ArchiveAcceptanceService acceptance;
+    private final AcceptanceService acceptance;
     private final JwtTokenService tokenService;
 
     public HubChangeRequestController(ChangeRequestService changeRequestService,
                                       ArchiveAccessGuard guard,
-                                      ArchiveAcceptanceService acceptance,
+                                      AcceptanceService acceptance,
                                       JwtTokenService tokenService) {
         this.changeRequestService = changeRequestService;
         this.guard = guard;
@@ -115,7 +116,7 @@ public class HubChangeRequestController {
             description = ArchiveApiDocs.INTERNAL_ERROR,
             content = @Content(schema = @Schema(implementation = ArchiveResponse.class)))
     })
-    public ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> review(
+    public ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> review(
             @Parameter(description = "申请编号", schema = @Schema(type = "string")) @PathVariable String id,
             @RequestHeader(name = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(name = HttpHeaders.AUTHORIZATION, required = false) String authorization,
@@ -127,7 +128,7 @@ public class HubChangeRequestController {
         ArchiveEntryChecks.requireReviewReason(action, request.reviewReason());
         boolean approve = action == SkuArchiveAction.APPROVE;
         return ArchiveHttp.accepted(acceptance.submit(
-            new ArchiveAcceptanceService.Command(HUB_SCOPE, API_REVIEW, idempotencyKey, id,
+            AcceptanceCommand.of(HUB_SCOPE, API_REVIEW, idempotencyKey, id,
                 request.toString(), SkuChangeRequestStatus.PENDING.name(), user.accountId()),
             () -> changeRequestService.review(id, approve, request.reviewReason(), user.accountId())));
     }

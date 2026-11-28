@@ -6,7 +6,7 @@ import StatusTag from './StatusTag.vue'
 /**
  * 列表页详情唯一外壳，对应 12 的 `UI-C04`、`UI-D01`~`UI-D13`：
  * - 头部四件套固定：标题、状态标签、副标题 + 唯一一个右上关闭入口（`UI-D06`）。
- * - 宽度三档由调用方按字段列数传入，组件不自行判断档位（`UI-C04`、`UI-D01`）。
+ * - 宽度优先取调用方显式传入的档位；未传时按导航恒常驻取「带导航」880（`UI-C04`、`UI-D02`）。
  * - 字段列数由 `columns` 显式传入，不由宽度推导（`UI-D04`、`UI-D05`）。
  * - 主体左侧详情导航常驻，分区再少也不隐藏（`UI-D02`）。
  * - 导航与正文双向联动，分区标题即锚点（`UI-D03`）。
@@ -29,7 +29,7 @@ const props = withDefaults(
     status?: string
     statusType?: 'success' | 'info' | 'warning' | 'danger'
     sections: DrawerSection[]
-    /** 宽度档位，默认两列 720；带导航或宽字段由调用方升到 880（`UI-C04`）。 */
+    /** 宽度档位；显式传入时以其为准，未传时取下方按 `columns` 推导的默认档（`UI-C04`）。 */
     width?: DetailDrawerWidth
     /**
      * 字段列数：1 为一行一对（默认），2 为一行两对。
@@ -38,16 +38,25 @@ const props = withDefaults(
     columns?: 1 | 2
     /** 关闭出口总开关，默认 true；提交中由页面置 false（`UI-D12`）。 */
     closable?: boolean
+    /**
+     * 正文加载中：超 300ms 用骨架屏，不整层白屏（`UI-S01`、`UI-D11`）。
+     * 页面在首次取详情期间置 true，取到后置 false。
+     */
+    loading?: boolean
+    /** 正文级错误文案：在正文内显示错误块与「重试」，不整抽屉白屏（`UI-S04`、`UI-D11`）。 */
+    error?: string
   }>(),
   {
-    width: 720,
     columns: 1,
     closable: true,
+    loading: false,
+    error: '',
   },
 )
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
+  (e: 'retry'): void
 }>()
 
 /**
@@ -59,8 +68,19 @@ const canNavigate = computed(() => props.sections.length > 1)
 /** 单分区时禁用跳转的原因，随导航项一起呈现，不静默失效（`UI-D02`）。 */
 const disabledReason = computed(() => (canNavigate.value ? '' : '仅一个分区'))
 
-/** 宽度只映射成 el-drawer 的 size，不再把 720px 写死在组件里（`UI-C04`）。 */
-const drawerSize = computed(() => `${props.width}px`)
+/**
+ * 未显式传 `width` 时的档位，按 `columns` 取。`UI-C04` 的三档里 480 与 720 对应「无导航」，
+ * 而 `UI-D02` 要求左侧详情导航无条件常驻（本组件也确实无条件渲染导航），
+ * 因此 1 列与 2 列都落「带导航」880 一档：480 / 720 会先被常驻的 140px 导航挤掉可用宽度。
+ * 列数仍只由 `columns` 决定，不反过来从宽度推导（`UI-D04`）。
+ */
+const DEFAULT_WIDTH_BY_COLUMNS: Record<1 | 2, DetailDrawerWidth> = { 1: 880, 2: 880 }
+
+/** 显式传参优先，其次取按列数的默认档（`UI-C04`）。 */
+const resolvedWidth = computed<DetailDrawerWidth>(() => props.width ?? DEFAULT_WIDTH_BY_COLUMNS[props.columns])
+
+/** 宽度只映射成 el-drawer 的 size，组件内不写死像素档位（`UI-C04`）。 */
+const drawerSize = computed(() => `${resolvedWidth.value}px`)
 
 /** 正文滚动容器，导航高亮以它为参照系（`UI-D03`）。 */
 const scrollRef = ref<HTMLElement | null>(null)
@@ -202,15 +222,24 @@ watch(
         </nav>
 
         <div ref="scrollRef" class="detail-fields" @scroll.passive="syncActiveByScroll">
-          <section v-for="section in sections" :key="section.title" class="detail-section" data-drawer-anchor>
-            <h4>{{ section.title }}</h4>
-            <dl class="detail-list" :class="{ 'is-two-columns': columns === 2 }">
-              <div v-for="field in section.fields" :key="field.label" class="detail-row">
-                <dt>{{ field.label }}</dt>
-                <dd>{{ field.value }}</dd>
-              </div>
-            </dl>
-          </section>
+          <!-- UI-S01、UI-D11：首次取详情超 300ms 用骨架屏，不整层白屏 -->
+          <el-skeleton v-if="loading" :rows="8" animated />
+          <!-- UI-S04、UI-D11：请求失败在正文内给错误块与重试，抽屉不白屏、关闭出口仍在头部 -->
+          <div v-else-if="error" class="detail-error">
+            <p class="detail-error__text">{{ error }}</p>
+            <ActionButton variant="text" @click="emit('retry')">重试</ActionButton>
+          </div>
+          <template v-else>
+            <section v-for="section in sections" :key="section.title" class="detail-section" data-drawer-anchor>
+              <h4>{{ section.title }}</h4>
+              <dl class="detail-list" :class="{ 'is-two-columns': columns === 2 }">
+                <div v-for="field in section.fields" :key="field.label" class="detail-row">
+                  <dt>{{ field.label }}</dt>
+                  <dd>{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+          </template>
         </div>
       </div>
 
@@ -334,6 +363,21 @@ watch(
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+}
+/* UI-S04：错误块留在正文内，不遮盖头部与底部操作 */
+.detail-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--el-color-danger-light-9);
+}
+.detail-error__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--el-color-danger);
 }
 .detail-section + .detail-section {
   margin-top: 24px;

@@ -1,6 +1,6 @@
 package com.huoling.wms.masterdata.archive.api;
 
-import com.huoling.wms.masterdata.archive.application.ArchiveAcceptanceService;
+import com.huoling.wms.masterdata.acceptance.application.AcceptanceService;
 import com.huoling.wms.masterdata.archive.domain.ArchiveErrorCodes;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,8 +42,8 @@ final class ArchiveHttp {
      * 写接口统一出口：一律 202，响应体只有受理号与受理时状态快照（契约「写接口统一响应」）。
      * 结果与最终版本号不在这里返回，由 API-015 至 API-017 查询。
      */
-    static ResponseEntity<ArchiveResponse<ArchiveAcceptanceService.Ticket>> accepted(
-            ArchiveAcceptanceService.Ticket ticket) {
+    static ResponseEntity<ArchiveResponse<AcceptanceService.Ticket>> accepted(
+            AcceptanceService.Ticket ticket) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ArchiveResponse.ok(ticket));
     }
 }

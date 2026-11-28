@@ -103,8 +103,19 @@ public class PermissionStartupSync implements ApplicationRunner {
             || path.startsWith("/actuator");
     }
 
+    /**
+     * 权限点归属的模块：取编码第二段的大写形式（{@code hub.account.read} → {@code HUB}）。
+     *
+     * <p>货主档案的两枚点（{@code owner.hub.read}、{@code owner.hub.write}）例外：
+     * 业务模块是 M01 货主（`24`），按第二段会落成 {@code HUB}（运营端），
+     * 与 `21` E-20 登记的「模块 OWNER」不一致。例外只此一条，
+     * 且在权限点表由初始化脚本先写入时同样生效（脚本与代码取同一个模块名）。
+     */
     private String moduleOf(String permCode) {
         String[] parts = permCode.split("\\.");
+        if (parts.length >= 2 && "owner".equals(parts[0])) {
+            return "OWNER";
+        }
         return parts.length >= 2 ? parts[1].toUpperCase() : "COMMON";
     }
 }
