@@ -41,7 +41,7 @@ reasoningEffort: max
 7. `humandesign/sysdesign/<当前版>/12b-移动作业端规格.md` —— 移动端的超时重试、幂等提交与失败提示要求
 8. `humandesign/sysdesign/<当前版>/22-状态机与事务边界总表.md` —— 状态冲突与事务例外的唯一口径
 9. `openspec/config.yaml` —— design 文档的三章结构与硬性规则
-10. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
+10. `.codebuddy/references/写作规范.md` —— 写作规范，按需查阅
 11. 本次 change 的 `design.md`（若已存在）与 `tasks.md`
 12. 按需查阅 `humandesign/sysdesign/<当前版>/` 下与本次变更相关的主题文档
 

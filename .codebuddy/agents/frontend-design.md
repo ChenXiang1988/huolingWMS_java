@@ -43,7 +43,7 @@ enableThinking: true
 5. `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` —— 界面与交互规范的权威源
 6. 本次 change 的 `ui.md`（若存在）—— 本次交互与界面差异
 7. `openspec/config.yaml` —— design 文档三章结构与硬性规则
-8. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
+8. `.codebuddy/references/写作规范.md` —— 写作规范，按需查阅
 9. 本次 change 的 `design.md`（**先读 API 接口契约章**）与 `tasks.md`
 
 # 硬约束

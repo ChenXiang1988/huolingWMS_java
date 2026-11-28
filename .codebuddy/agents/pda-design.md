@@ -50,7 +50,7 @@ reasoningEffort: high
 3. `humandesign/sysdesign/<当前版>/05-角色与权限矩阵.md` —— 现场作业角色、任务归属与数据域
 4. `humandesign/sysdesign/<当前版>/12-界面与交互设计规范.md` —— 跨端状态语义与色彩，只引用不改
 5. `humandesign/sysdesign/<当前版>/12b-移动作业端规格.md` —— 常驻移动作业端规范，编号用 `UI-M`；**不存在时先按本文骨架建立，再继续**
-6. `.codebuddy/rules/doc-writing/RULE.mdc` —— 写作规范
+6. `.codebuddy/references/写作规范.md` —— 写作规范，按需查阅
 7. 派发到具体变更时：`proposal.md`、`specs/**/spec.md`、`design.md`、`tasks.md`
 
 # 既有基线（不得推翻，只可补充）
@@ -108,7 +108,7 @@ reasoningEffort: high
 
 # 规范文档骨架
 
-严格按 `doc-writing.md` 的四段结构，二级标题用判断句：
+严格按 `.codebuddy/references/写作规范.md` 的四段结构，二级标题用判断句：
 
 ## 结论
 
